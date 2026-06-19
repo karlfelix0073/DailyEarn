@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>DailyEarn</title>
+<style>
+  :root {
+    --bg: #0f0e17;
+    --bg2: #1a1827;
+    --bg3: #242235;
+    --bg4: #2e2b42;
+    --accent: #7c6ff7;
+    --accent2: #a99ff9;
+    --accent-dim: #3d3878;
+    --green: #4ecca3;
+    --green-dim: #1a4a3c;
+    --amber: #f7c948;
+    --amber-dim: #4a3c10;
+    --coral: #ff7e6b;
+    --coral-dim: #4a2020;
+    --text: #e8e6f0;
+    --text2: #9b97b8;
+    --text3: #5a5778;
+    --border: #2e2b42;
+    --border2: #3d3a56;
+    --radius: 14px;
+    --radius-sm: 8px;
+    --nav-h: 68px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 16px; line-height: 1.5; overscroll-behavior: none; }
+  body { display: flex; flex-direction: column; max-width: 480px; margin: 0 auto; min-height: 100vh; }
+
+  /* SCREENS */
+  .screen { display: none; flex: 1; overflow-y: auto; padding: 0 0 calc(var(--nav-h) + 12px); }
+  .screen.active { display: block; }
+
+  /* BOTTOM NAV */
+  nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; height: var(--nav-h); background: var(--bg2); border-top: 1px solid var(--border); display: flex; z-index: 100; padding-bottom: env(safe-area-inset-bottom); }
+  .nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; background: none; border: none; color: var(--text3); font-size: 11px; font-weight: 500; cursor: pointer; padding: 8px 0; transition: color .15s; }
+  .nav-btn.active { color: var(--accent2); }
+  .nav-btn svg { width: 24px; height: 24px; stroke-width: 1.8; }
+
+  /* HEADER */
+  .page-header { padding: 20px 16px 12px; position: sticky; top: 0; background: var(--bg); z-index: 10; border-bottom: 1px solid var(--border); }
+  .page-header h1 { font-size: 18px; font-weight: 600; color: var(--text); }
+  .page-header .sub { font-size: 13px; color: var(--text3); margin-top: 2px; }
+
+  /* TODAY SCREEN */
+  .today-hero { padding: 24px 16px 16px; text-align: center; background: linear-gradient(180deg, var(--bg2) 0%, var(--bg) 100%); }
+  .today-date { font-size: 13px; color: var(--text3); margin-bottom: 4px; }
+  .today-earned { font-size: 52px; font-weight: 700; color: var(--accent2); letter-spacing: -2px; line-height: 1; }
+  .today-earned span { font-size: 22px; font-weight: 400; color: var(--text3); }
+  .today-streaks { display: flex; justify-content: center; gap: 12px; margin-top: 12px; }
+  .streak-pill { display: flex; align-items: center; gap: 5px; background: var(--bg3); border: 1px solid var(--border2); border-radius: 20px; padding: 5px 12px; font-size: 13px; font-weight: 500; }
+  .streak-pill .streak-val { color: var(--accent2); }
+
+  /* WAKEUP */
+  .wakeup-section { padding: 12px 16px; }
+  .section-label { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--text3); margin-bottom: 8px; }
+  .wakeup-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .wakeup-btn { background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius-sm); padding: 10px 6px; text-align: center; cursor: pointer; transition: all .15s; }
+  .wakeup-btn.selected { background: var(--accent-dim); border-color: var(--accent); }
+  .wakeup-btn .wk-time { font-size: 13px; font-weight: 600; color: var(--text); }
+  .wakeup-btn .wk-euro { font-size: 12px; color: var(--green); margin-top: 2px; }
+  .wakeup-btn.selected .wk-time { color: var(--accent2); }
+
+  /* TASKS */
+  .tasks-section { padding: 4px 16px 0; }
+  .cat-group { margin-bottom: 16px; }
+  .cat-header { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+  .cat-emoji { font-size: 16px; }
+  .cat-name { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--text3); }
+  .task-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: border-color .15s, background .15s; min-height: 60px; }
+  .task-card:active { background: var(--bg3); }
+  .task-card.done { border-color: var(--green-dim); }
+  .task-card.missed { border-color: var(--coral-dim); opacity: .6; }
+  .task-check { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--border2); flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all .15s; }
+  .task-card.done .task-check { background: var(--green); border-color: var(--green); }
+  .task-check svg { width: 14px; height: 14px; stroke: var(--bg); display: none; }
+  .task-card.done .task-check svg { display: block; }
+  .task-info { flex: 1; min-width: 0; }
+  .task-name { font-size: 15px; font-weight: 500; color: var(--text); }
+  .task-card.done .task-name { text-decoration: line-through; color: var(--text3); }
+  .task-meta { font-size: 12px; color: var(--text3); margin-top: 2px; }
+  .task-value { font-size: 15px; font-weight: 600; color: var(--green); flex-shrink: 0; }
+  .task-card.done .task-value { color: var(--text3); }
+  .type-badge { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 10px; letter-spacing: .04em; margin-right: 4px; }
+  .badge-optional { background: var(--amber-dim); color: var(--amber); }
+  .badge-xweek { background: var(--accent-dim); color: var(--accent2); }
+
+  /* MISSED SECTION */
+  .missed-label { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--coral); margin: 16px 0 8px; }
+
+  /* STATS SCREEN */
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 16px; }
+  .stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+  .stat-label { font-size: 11px; color: var(--text3); font-weight: 500; letter-spacing: .04em; margin-bottom: 4px; }
+  .stat-val { font-size: 28px; font-weight: 700; color: var(--accent2); }
+  .stat-val.green { color: var(--green); }
+  .stat-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+  .stats-section { padding: 0 16px 16px; }
+  .task-stat-row { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
+  .task-stat-name { font-size: 14px; font-weight: 500; }
+  .task-stat-right { text-align: right; }
+  .task-stat-count { font-size: 13px; color: var(--text2); }
+  .task-stat-streak { font-size: 12px; color: var(--accent2); margin-top: 2px; }
+  .week-bar { margin: 0 16px 16px; }
+  .week-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .day-dot { background: var(--bg3); border-radius: 6px; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 2px; }
+  .day-dot.done { background: var(--green-dim); }
+  .day-dot.today { border: 1px solid var(--accent); }
+  .day-dot .day-name { font-size: 9px; color: var(--text3); font-weight: 600; }
+  .day-dot.done .day-name { color: var(--green); }
+  .day-dot .day-check { font-size: 12px; }
+
+  /* SETTINGS SCREEN */
+  .settings-section { padding: 16px; }
+  .settings-group { margin-bottom: 20px; }
+  .settings-group-title { font-size: 12px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px; }
+  .settings-item { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; min-height: 56px; }
+  .settings-item:active { background: var(--bg3); }
+  .settings-item-left { flex: 1; min-width: 0; }
+  .settings-item-name { font-size: 15px; font-weight: 500; }
+  .settings-item-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+  .settings-item-right { color: var(--text3); flex-shrink: 0; }
+  .add-btn { width: 100%; background: var(--bg3); border: 1px dashed var(--border2); border-radius: var(--radius); padding: 14px; text-align: center; color: var(--accent2); font-size: 14px; font-weight: 500; cursor: pointer; min-height: 52px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .add-btn:active { background: var(--bg4); }
+
+  /* MODAL */
+  .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 200; align-items: flex-end; justify-content: center; }
+  .modal-backdrop.open { display: flex; }
+  .modal { background: var(--bg2); border-radius: 20px 20px 0 0; padding: 20px 16px 32px; width: 100%; max-width: 480px; max-height: 92vh; overflow-y: auto; }
+  .modal-handle { width: 36px; height: 4px; background: var(--border2); border-radius: 2px; margin: 0 auto 20px; }
+  .modal-title { font-size: 18px; font-weight: 600; margin-bottom: 20px; }
+  .form-group { margin-bottom: 16px; }
+  .form-label { font-size: 13px; font-weight: 500; color: var(--text2); margin-bottom: 6px; display: block; }
+  .form-input { width: 100%; background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 16px; color: var(--text); outline: none; }
+  .form-input:focus { border-color: var(--accent); }
+  .form-select { width: 100%; background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 16px; color: var(--text); outline: none; appearance: none; }
+  .seg-control { display: grid; gap: 6px; }
+  .seg-btn { background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 14px; font-weight: 500; color: var(--text2); cursor: pointer; text-align: left; transition: all .15s; }
+  .seg-btn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent2); }
+  .seg-btn small { display: block; font-size: 12px; font-weight: 400; color: var(--text3); margin-top: 2px; }
+  .seg-btn.active small { color: var(--accent); }
+  .freq-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 6px; }
+  .freq-day { background: var(--bg3); border: 1px solid var(--border2); border-radius: 6px; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: var(--text3); cursor: pointer; }
+  .freq-day.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent2); }
+  .modal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 24px; }
+  .btn-primary { background: var(--accent); border: none; border-radius: var(--radius-sm); padding: 14px; font-size: 15px; font-weight: 600; color: #fff; cursor: pointer; }
+  .btn-primary:active { opacity: .85; }
+  .btn-secondary { background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius-sm); padding: 14px; font-size: 15px; font-weight: 500; color: var(--text2); cursor: pointer; }
+  .btn-danger { background: var(--coral-dim); border: 1px solid var(--coral); border-radius: var(--radius-sm); padding: 14px; font-size: 15px; font-weight: 500; color: var(--coral); cursor: pointer; margin-top: 8px; width: 100%; }
+  .cat-color-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+  .cat-color-btn { aspect-ratio: 1; border-radius: 50%; border: 2px solid transparent; cursor: pointer; }
+  .cat-color-btn.active { border-color: #fff; }
+  .xweek-num { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+  .xweek-num button { width: 40px; height: 40px; border-radius: 50%; background: var(--bg3); border: 1px solid var(--border2); color: var(--text); font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .xweek-num .num-val { font-size: 24px; font-weight: 700; color: var(--accent2); min-width: 32px; text-align: center; }
+  .empty-state { text-align: center; padding: 40px 16px; color: var(--text3); font-size: 14px; }
+  .empty-icon { font-size: 36px; margin-bottom: 8px; }
+  .tab-row { display: flex; gap: 8px; margin-bottom: 16px; }
+  .tab-btn { flex: 1; padding: 8px; background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; color: var(--text3); cursor: pointer; }
+  .tab-btn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent2); }
+</style>
+</head>
+<body>
+
+<!-- TODAY -->
+<div class="screen active" id="screen-today">
+  <div class="today-hero">
+    <div class="today-date" id="today-date"></div>
+    <div class="today-earned"><span>€</span><span id="today-amount">0</span></div>
+    <div style="font-size:12px;color:var(--text3);margin-top:4px">heute verdient</div>
+    <div class="today-streaks">
+      <div class="streak-pill">🔥 <span class="streak-val" id="main-streak-val">0</span> Tage</div>
+      <div class="streak-pill" id="week-earned-pill">📅 <span class="streak-val" id="week-amount">0</span> € Woche</div>
+    </div>
+  </div>
+  <div class="wakeup-section">
+    <div class="section-label">Aufstehzeit</div>
+    <div class="wakeup-grid">
+      <div class="wakeup-btn" onclick="setWakeup('5-6')" id="wk-5-6"><div class="wk-time">5–6 Uhr</div><div class="wk-euro">+5,00 €</div></div>
+      <div class="wakeup-btn" onclick="setWakeup('6-7')" id="wk-6-7"><div class="wk-time">6–7 Uhr</div><div class="wk-euro">+2,00 €</div></div>
+      <div class="wakeup-btn" onclick="setWakeup('7-8')" id="wk-7-8"><div class="wk-time">7–8 Uhr</div><div class="wk-euro">+1,00 €</div></div>
+    </div>
+  </div>
+  <div class="tasks-section" id="tasks-container"></div>
+</div>
+
+<!-- STATS -->
+<div class="screen" id="screen-stats">
+  <div class="page-header"><h1>Statistik</h1><div class="sub" id="stats-sub"></div></div>
+  <div style="padding:16px 16px 0">
+    <div class="tab-row">
+      <button class="tab-btn active" onclick="setStatTab('week',this)">Diese Woche</button>
+      <button class="tab-btn" onclick="setStatTab('month',this)">Dieser Monat</button>
+    </div>
+  </div>
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-label">VERDIENT</div><div class="stat-val green" id="stat-earned">0,00 €</div><div class="stat-sub" id="stat-period">diese Woche</div></div>
+    <div class="stat-card"><div class="stat-label">MAIN STREAK</div><div class="stat-val" id="stat-streak">🔥 0</div><div class="stat-sub">Tage in Folge</div></div>
+    <div class="stat-card"><div class="stat-label">ERLEDIGT</div><div class="stat-val" id="stat-rate">0%</div><div class="stat-sub" id="stat-rate-sub">aller Pflichtaufgaben</div></div>
+    <div class="stat-card"><div class="stat-label">GESAMT</div><div class="stat-val" id="stat-total">0,00 €</div><div class="stat-sub">seit Start</div></div>
+  </div>
+  <div class="week-bar" id="week-bar"></div>
+  <div class="stats-section">
+    <div class="section-label" style="padding:0 0 8px">Aufgaben-Details</div>
+    <div id="task-stats-list"></div>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div class="screen" id="screen-settings">
+  <div class="page-header"><h1>Einstellungen</h1><div class="sub">Aufgaben & Kategorien</div></div>
+  <div class="settings-section">
+    <div class="settings-group">
+      <div class="settings-group-title">Kategorien</div>
+      <div id="cat-list"></div>
+      <div class="add-btn" onclick="openCatModal()">+ Kategorie hinzufügen</div>
+    </div>
+    <div class="settings-group">
+      <div class="settings-group-title">Aufgaben</div>
+      <div id="task-list-settings"></div>
+      <div class="add-btn" onclick="openTaskModal()">+ Aufgabe hinzufügen</div>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav>
+  <button class="nav-btn active" onclick="showScreen('today',this)" id="nav-today">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+    Heute
+  </button>
+  <button class="nav-btn" onclick="showScreen('stats',this)" id="nav-stats">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    Statistik
+  </button>
+  <button class="nav-btn" onclick="showScreen('settings',this)" id="nav-settings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    Einstellungen
+  </button>
+</nav>
+
+<!-- TASK MODAL -->
+<div class="modal-backdrop" id="task-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="task-modal-title">Neue Aufgabe</div>
+    <div class="form-group">
+      <label class="form-label">Name</label>
+      <input class="form-input" id="task-name-input" placeholder="z.B. Bass üben" maxlength="40">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Kategorie</label>
+      <select class="form-select" id="task-cat-select"></select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Typ</label>
+      <div class="seg-control">
+        <button class="seg-btn active" onclick="selectType('daily',this)"><span>🟣 Daily</span><small>Täglich — zählt zum Main-Streak</small></button>
+        <button class="seg-btn" onclick="selectType('xweek',this)"><span>🟢 X mal pro Woche</span><small>Beliebige Tage — eigener Streak</small></button>
+        <button class="seg-btn" onclick="selectType('optional',this)"><span>🟡 Optional</span><small>Kein Muss — Bonus wenn erledigt</small></button>
+      </div>
+    </div>
+    <div class="form-group" id="freq-group" style="display:none">
+      <label class="form-label">Wie oft pro Woche?</label>
+      <div class="xweek-num">
+        <button onclick="changeFreq(-1)">−</button>
+        <div class="num-val" id="freq-num">3</div>
+        <button onclick="changeFreq(1)">+</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Wert (€)</label>
+      <input class="form-input" id="task-value-input" type="number" min="0" max="999" step="0.5" placeholder="0.00">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeTaskModal()">Abbrechen</button>
+      <button class="btn-primary" onclick="saveTask()">Speichern</button>
+    </div>
+    <button class="btn-danger" id="task-delete-btn" onclick="deleteTask()" style="display:none">Aufgabe löschen</button>
+  </div>
+</div>
+
+<!-- CAT MODAL -->
+<div class="modal-backdrop" id="cat-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="cat-modal-title">Neue Kategorie</div>
+    <div class="form-group">
+      <label class="form-label">Name</label>
+      <input class="form-input" id="cat-name-input" placeholder="z.B. Haushalt" maxlength="24">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Emoji</label>
+      <input class="form-input" id="cat-emoji-input" placeholder="🏠" maxlength="4" style="font-size:24px;text-align:center">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeCatModal()">Abbrechen</button>
+      <button class="btn-primary" onclick="saveCat()">Speichern</button>
+    </div>
+    <button class="btn-danger" id="cat-delete-btn" onclick="deleteCat()" style="display:none">Kategorie löschen</button>
+  </div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────
+const SK = {
+  cats: 'de_cats', tasks: 'de_tasks', log: 'de_log',
+  wakeup: 'de_wakeup', streak: 'de_streak'
+};
+
+function load(key, def) {
+  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch { return def; }
+}
+function save(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+
+function getToday() {
+  const now = new Date();
+  if (now.getHours() < 3) now.setDate(now.getDate() - 1);
+  return now.toISOString().slice(0, 10);
+}
+function getWeekKey(dateStr) {
+  const d = new Date(dateStr);
+  const day = d.getDay() === 0 ? 7 : d.getDay();
+  const mon = new Date(d); mon.setDate(d.getDate() - (day - 1));
+  return mon.toISOString().slice(0, 10);
+}
+function getCurrentWeekKey() { return getWeekKey(getToday()); }
+
+// Default data
+function initData() {
+  if (!localStorage.getItem(SK.cats)) {
+    save(SK.cats, [
+      { id: 'cat1', name: 'Körper', emoji: '💪' },
+      { id: 'cat2', name: 'Haushalt', emoji: '🏠' },
+      { id: 'cat3', name: 'Musik', emoji: '🎵' },
+      { id: 'cat4', name: 'Sonstiges', emoji: '🌱' },
+    ]);
+  }
+  if (!localStorage.getItem(SK.tasks)) {
+    save(SK.tasks, [
+      { id: 't1', name: 'Bett machen', typ: 'daily', catId: 'cat2', wert: 1, aktiv: true },
+      { id: 't2', name: '10 min dehnen', typ: 'daily', catId: 'cat1', wert: 5, aktiv: true },
+      { id: 't3', name: 'Bass üben', typ: 'xweek', catId: 'cat3', wert: 8, frequenz: 3, aktiv: true },
+      { id: 't4', name: 'Wäsche waschen', typ: 'optional', catId: 'cat2', wert: 3, aktiv: true },
+    ]);
+  }
+  if (!localStorage.getItem(SK.streak)) save(SK.streak, { main: 0, lastDay: '', taskStreaks: {} });
+  if (!localStorage.getItem(SK.log)) save(SK.log, []);
+}
+
+// ── HELPERS ───────────────────────────────────────────
+function getCats() { return load(SK.cats, []); }
+function getTasks() { return load(SK.tasks, []); }
+function getLog() { return load(SK.log, []); }
+function getStreak() { return load(SK.streak, { main: 0, lastDay: '', taskStreaks: {} }); }
+function getWakeup() { return load(SK.wakeup, {}); }
+
+function getLogForDay(date) { return getLog().filter(e => e.datum === date); }
+function isTaskDoneToday(taskId) { return getLogForDay(getToday()).some(e => e.taskId === taskId && e.status === 'done'); }
+
+function wakeupValues() { return { '5-6': 5, '6-7': 2, '7-8': 1 }; }
+
+function getTodayEarned() {
+  const date = getToday();
+  const log = getLogForDay(date);
+  const done = log.filter(e => e.status === 'done').reduce((s, e) => s + (e.verdient || 0), 0);
+  const wu = getWakeup();
+  const wuVal = wu[date] ? (wakeupValues()[wu[date]] || 0) : 0;
+  return done + wuVal;
+}
+
+function formatEuro(val) {
+  return val.toFixed(2).replace('.', ',') + ' €';
+}
+
+function getDayName(dateStr) {
+  const days = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+  return days[new Date(dateStr).getDay()];
+}
+
+// ── STREAK LOGIC ──────────────────────────────────────
+function checkAndUpdateStreak() {
+  const today = getToday();
+  const streak = getStreak();
+  if (streak.lastDay === today) return;
+
+  const tasks = getTasks().filter(t => t.aktiv && t.typ === 'daily');
+  const todayLog = getLogForDay(today);
+  const allDone = tasks.every(t => todayLog.some(e => e.taskId === t.id && e.status === 'done'));
+
+  if (streak.lastDay) {
+    const last = new Date(streak.lastDay);
+    const now = new Date(today);
+    const diff = (now - last) / 86400000;
+    if (diff > 1) { streak.main = 0; }
+  }
+
+  if (allDone) {
+    streak.main = (streak.main || 0) + 1;
+    streak.lastDay = today;
+  }
+  save(SK.streak, streak);
+}
+
+function getXWeekStreakForTask(taskId) {
+  const streak = getStreak();
+  return streak.taskStreaks[taskId] || 0;
+}
+
+function getXWeekProgressThisWeek(taskId) {
+  const weekKey = getCurrentWeekKey();
+  const log = getLog();
+  const weekDates = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(weekKey);
+    d.setDate(d.getDate() + i);
+    weekDates.push(d.toISOString().slice(0, 10));
+  }
+  return log.filter(e => e.taskId === taskId && e.status === 'done' && weekDates.includes(e.datum)).length;
+}
+
+// ── TODAY SCREEN ──────────────────────────────────────
+function renderToday() {
+  checkAndUpdateStreak();
+  const today = getToday();
+  const d = new Date(today + 'T12:00:00');
+  const days = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+  const months = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+  document.getElementById('today-date').textContent = `${days[d.getDay()]}, ${d.getDate()}. ${months[d.getMonth()]}`;
+
+  const earned = getTodayEarned();
+  document.getElementById('today-amount').textContent = earned.toFixed(2).replace('.', ',');
+  document.getElementById('main-streak-val').textContent = getStreak().main || 0;
+
+  const weekEarned = getEarnedInPeriod('week');
+  document.getElementById('week-amount').textContent = weekEarned.toFixed(2).replace('.', ',');
+
+  // Wakeup
+  const wu = getWakeup();
+  const selected = wu[today];
+  ['5-6','6-7','7-8'].forEach(k => {
+    document.getElementById('wk-' + k).classList.toggle('selected', selected === k);
+  });
+
+  // Tasks grouped by category
+  const cats = getCats();
+  const tasks = getTasks().filter(t => t.aktiv);
+  const container = document.getElementById('tasks-container');
+  container.innerHTML = '';
+
+  const todayLog = getLogForDay(today);
+  const missedTasks = [];
+
+  // Check for missed daily tasks from yesterday
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yStr = yesterday.toISOString().slice(0, 10);
+  const yLog = getLogForDay(yStr);
+  tasks.filter(t => t.typ === 'daily').forEach(t => {
+    if (!yLog.some(e => e.taskId === t.id)) return;
+  });
+
+  // Group by category
+  const catMap = {};
+  tasks.forEach(t => {
+    const cid = t.catId || 'none';
+    if (!catMap[cid]) catMap[cid] = [];
+    catMap[cid].push(t);
+  });
+
+  // Order: daily first, then xweek, then optional
+  const typeOrder = { daily: 0, xweek: 1, optional: 2 };
+
+  cats.forEach(cat => {
+    const catTasks = (catMap[cat.id] || []).sort((a,b) => typeOrder[a.typ] - typeOrder[b.typ]);
+    if (!catTasks.length) return;
+
+    const group = document.createElement('div');
+    group.className = 'cat-group';
+    group.innerHTML = `<div class="cat-header"><span class="cat-emoji">${cat.emoji}</span><span class="cat-name">${cat.name}</span></div>`;
+
+    catTasks.forEach(task => {
+      const done = todayLog.some(e => e.taskId === task.id && e.status === 'done');
+      const card = document.createElement('div');
+      card.className = 'task-card' + (done ? ' done' : '');
+      card.onclick = () => toggleTask(task.id);
+
+      let badge = '';
+      let meta = '';
+      if (task.typ === 'xweek') {
+        const prog = getXWeekProgressThisWeek(task.id);
+        const streak = getXWeekStreakForTask(task.id);
+        badge = `<span class="type-badge badge-xweek">${prog}/${task.frequenz}×</span>`;
+        meta = `${prog} von ${task.frequenz}× diese Woche · 🎯 ${streak} Wochen`;
+      } else if (task.typ === 'optional') {
+        badge = `<span class="type-badge badge-optional">Optional</span>`;
+      }
+
+      card.innerHTML = `
+        <div class="task-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+        <div class="task-info">
+          <div class="task-name">${badge}${task.name}</div>
+          ${meta ? `<div class="task-meta">${meta}</div>` : ''}
+        </div>
+        <div class="task-value">${done ? '' : '+'}${task.wert.toFixed(2).replace('.',',')} €</div>
+      `;
+      group.appendChild(card);
+    });
+
+    container.appendChild(group);
+  });
+
+  // Uncategorized
+  const uncatTasks = (catMap['none'] || []).sort((a,b) => typeOrder[a.typ] - typeOrder[b.typ]);
+  if (uncatTasks.length) {
+    const group = document.createElement('div');
+    group.className = 'cat-group';
+    group.innerHTML = `<div class="cat-header"><span class="cat-emoji">📋</span><span class="cat-name">Sonstige</span></div>`;
+    uncatTasks.forEach(task => {
+      const done = todayLog.some(e => e.taskId === task.id && e.status === 'done');
+      const card = document.createElement('div');
+      card.className = 'task-card' + (done ? ' done' : '');
+      card.onclick = () => toggleTask(task.id);
+      card.innerHTML = `
+        <div class="task-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+        <div class="task-info"><div class="task-name">${task.name}</div></div>
+        <div class="task-value">${task.wert.toFixed(2).replace('.',',')} €</div>
+      `;
+      group.appendChild(card);
+    });
+    container.appendChild(group);
+  }
+
+  if (!tasks.length) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">✨</div>Keine Aufgaben. Füge welche in den Einstellungen hinzu!</div>`;
+  }
+}
+
+function toggleTask(taskId) {
+  const today = getToday();
+  const log = getLog();
+  const existing = log.findIndex(e => e.taskId === taskId && e.datum === today);
+
+  if (existing >= 0) {
+    log.splice(existing, 1);
+  } else {
+    const task = getTasks().find(t => t.id === taskId);
+    log.push({ taskId, datum: today, status: 'done', verdient: task ? task.wert : 0 });
+  }
+  save(SK.log, log);
+  checkAndUpdateStreak();
+  renderToday();
+}
+
+function setWakeup(slot) {
+  const today = getToday();
+  const wu = getWakeup();
+  wu[today] = (wu[today] === slot) ? null : slot;
+  save(SK.wakeup, wu);
+  renderToday();
+}
+
+// ── STATS SCREEN ──────────────────────────────────────
+let statTab = 'week';
+function setStatTab(tab, btn) {
+  statTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderStats();
+}
+
+function getEarnedInPeriod(period) {
+  const today = getToday();
+  const log = getLog();
+  const wu = getWakeup();
+  const wuVals = wakeupValues();
+
+  let dates = [];
+  if (period === 'week') {
+    const weekKey = getCurrentWeekKey();
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(weekKey);
+      d.setDate(d.getDate() + i);
+      dates.push(d.toISOString().slice(0, 10));
+    }
+  } else {
+    const d = new Date(today);
+    const year = d.getFullYear();
+    const month = d.getMonth();
+    const days = new Date(year, month + 1, 0).getDate();
+    for (let i = 1; i <= days; i++) {
+      dates.push(`${year}-${String(month+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`);
+    }
+  }
+
+  const taskEarned = log.filter(e => dates.includes(e.datum) && e.status === 'done')
+    .reduce((s, e) => s + (e.verdient || 0), 0);
+  const wuEarned = dates.reduce((s, date) => s + (wu[date] ? (wuVals[wu[date]] || 0) : 0), 0);
+  return taskEarned + wuEarned;
+}
+
+function getTotalEarned() {
+  const log = getLog();
+  const wu = getWakeup();
+  const wuVals = wakeupValues();
+  const taskTotal = log.filter(e => e.status === 'done').reduce((s, e) => s + (e.verdient || 0), 0);
+  const wuTotal = Object.values(wu).reduce((s, v) => s + (v ? (wuVals[v] || 0) : 0), 0);
+  return taskTotal + wuTotal;
+}
+
+function renderStats() {
+  const today = getToday();
+  const earned = getEarnedInPeriod(statTab);
+  const streak = getStreak();
+  document.getElementById('stat-earned').textContent = formatEuro(earned);
+  document.getElementById('stat-period').textContent = statTab === 'week' ? 'diese Woche' : 'diesen Monat';
+  document.getElementById('stat-streak').textContent = '🔥 ' + (streak.main || 0);
+  document.getElementById('stat-total').textContent = formatEuro(getTotalEarned());
+
+  // Completion rate for daily tasks this week
+  const weekKey = getCurrentWeekKey();
+  const weekDates = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(weekKey); d.setDate(d.getDate() + i);
+    weekDates.push(d.toISOString().slice(0, 10));
+  }
+  const passedDays = weekDates.filter(d => d <= today);
+  const dailyTasks = getTasks().filter(t => t.aktiv && t.typ === 'daily');
+  const log = getLog();
+  const possible = dailyTasks.length * passedDays.length;
+  const done = dailyTasks.reduce((s, t) =>
+    s + passedDays.filter(d => log.some(e => e.taskId === t.id && e.datum === d && e.status === 'done')).length, 0);
+  const rate = possible > 0 ? Math.round((done / possible) * 100) : 0;
+  document.getElementById('stat-rate').textContent = rate + '%';
+
+  // Week bar
+  const wb = document.getElementById('week-bar');
+  wb.innerHTML = '<div class="section-label" style="margin-bottom:8px">Diese Woche</div><div class="week-days">' +
+    weekDates.map(date => {
+      const allDone = dailyTasks.length > 0 && dailyTasks.every(t =>
+        log.some(e => e.taskId === t.id && e.datum === date && e.status === 'done'));
+      const isToday = date === today;
+      const future = date > today;
+      return `<div class="day-dot ${allDone ? 'done' : ''} ${isToday ? 'today' : ''}">
+        <div class="day-name">${getDayName(date)}</div>
+        <div class="day-check">${future ? '' : (allDone ? '✓' : (date < today ? '·' : ''))}</div>
+      </div>`;
+    }).join('') + '</div>';
+
+  // Task stats
+  const tasks = getTasks().filter(t => t.aktiv);
+  const tsl = document.getElementById('task-stats-list');
+  if (!tasks.length) { tsl.innerHTML = '<div class="empty-state"><div class="empty-icon">📊</div>Noch keine Daten.</div>'; return; }
+
+  tsl.innerHTML = tasks.map(task => {
+    const taskLog = log.filter(e => e.taskId === task.id && e.status === 'done');
+    let streakInfo = '';
+    if (task.typ === 'xweek') {
+      const prog = getXWeekProgressThisWeek(task.id);
+      const ws = getXWeekStreakForTask(task.id);
+      streakInfo = `<div class="task-stat-streak">🎯 ${ws} Wochen · ${prog}/${task.frequenz}× diese Woche</div>`;
+    } else if (task.typ === 'daily') {
+      const weekDone = passedDays.filter(d => log.some(e => e.taskId === task.id && e.datum === d && e.status === 'done')).length;
+      streakInfo = `<div class="task-stat-streak">📅 ${weekDone}/${passedDays.length} Tage diese Woche</div>`;
+    }
+    const cat = getCats().find(c => c.id === task.catId);
+    return `<div class="task-stat-row">
+      <div class="task-stat-name">${cat ? cat.emoji + ' ' : ''}${task.name}</div>
+      <div class="task-stat-right">
+        <div class="task-stat-count">${formatEuro(taskLog.reduce((s,e) => s+(e.verdient||0),0))} gesamt</div>
+        ${streakInfo}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── SETTINGS SCREEN ───────────────────────────────────
+function renderSettings() {
+  const cats = getCats();
+  const tasks = getTasks();
+
+  document.getElementById('cat-list').innerHTML = cats.map(cat => `
+    <div class="settings-item" onclick="openCatModal('${cat.id}')">
+      <div class="settings-item-left">
+        <div class="settings-item-name">${cat.emoji} ${cat.name}</div>
+        <div class="settings-item-sub">${tasks.filter(t=>t.catId===cat.id).length} Aufgaben</div>
+      </div>
+      <div class="settings-item-right">›</div>
+    </div>`).join('');
+
+  document.getElementById('task-list-settings').innerHTML = tasks.map(task => {
+    const cat = cats.find(c => c.id === task.catId);
+    const typeLabel = { daily: '🟣 Daily', xweek: `🟢 ${task.frequenz}×/Woche`, optional: '🟡 Optional' }[task.typ];
+    return `<div class="settings-item" onclick="openTaskModal('${task.id}')">
+      <div class="settings-item-left">
+        <div class="settings-item-name">${cat ? cat.emoji + ' ' : ''}${task.name}</div>
+        <div class="settings-item-sub">${typeLabel} · ${task.wert.toFixed(2).replace('.',',')} €${!task.aktiv ? ' · Inaktiv' : ''}</div>
+      </div>
+      <div class="settings-item-right">›</div>
+    </div>`;
+  }).join('');
+}
+
+// ── TASK MODAL ────────────────────────────────────────
+let editingTaskId = null;
+let currentType = 'daily';
+let currentFreq = 3;
+
+function openTaskModal(taskId) {
+  editingTaskId = taskId || null;
+  currentType = 'daily';
+  currentFreq = 3;
+
+  const modal = document.getElementById('task-modal');
+  const cats = getCats();
+
+  document.getElementById('task-modal-title').textContent = taskId ? 'Aufgabe bearbeiten' : 'Neue Aufgabe';
+  document.getElementById('task-cat-select').innerHTML = cats.map(c => `<option value="${c.id}">${c.emoji} ${c.name}</option>`).join('');
+  document.getElementById('task-delete-btn').style.display = taskId ? 'block' : 'none';
+  document.getElementById('freq-num').textContent = currentFreq;
+
+  if (taskId) {
+    const task = getTasks().find(t => t.id === taskId);
+    if (task) {
+      document.getElementById('task-name-input').value = task.name;
+      document.getElementById('task-value-input').value = task.wert;
+      document.getElementById('task-cat-select').value = task.catId || '';
+      currentType = task.typ;
+      currentFreq = task.frequenz || 3;
+      document.getElementById('freq-num').textContent = currentFreq;
+      selectType(task.typ, null);
+    }
+  } else {
+    document.getElementById('task-name-input').value = '';
+    document.getElementById('task-value-input').value = '';
+    selectType('daily', null);
+  }
+
+  modal.classList.add('open');
+  setTimeout(() => document.getElementById('task-name-input').focus(), 100);
+}
+
+function closeTaskModal() { document.getElementById('task-modal').classList.remove('open'); }
+
+function selectType(type, btn) {
+  currentType = type;
+  document.querySelectorAll('#task-modal .seg-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  else {
+    const btns = document.querySelectorAll('#task-modal .seg-btn');
+    const idx = ['daily','xweek','optional'].indexOf(type);
+    if (btns[idx]) btns[idx].classList.add('active');
+  }
+  document.getElementById('freq-group').style.display = type === 'xweek' ? 'block' : 'none';
+}
+
+function changeFreq(delta) {
+  currentFreq = Math.max(1, Math.min(7, currentFreq + delta));
+  document.getElementById('freq-num').textContent = currentFreq;
+}
+
+function saveTask() {
+  const name = document.getElementById('task-name-input').value.trim();
+  const val = parseFloat(document.getElementById('task-value-input').value) || 0;
+  const catId = document.getElementById('task-cat-select').value;
+  if (!name) { document.getElementById('task-name-input').focus(); return; }
+
+  const tasks = getTasks();
+  if (editingTaskId) {
+    const idx = tasks.findIndex(t => t.id === editingTaskId);
+    if (idx >= 0) {
+      tasks[idx] = { ...tasks[idx], name, wert: val, catId, typ: currentType, frequenz: currentFreq };
+    }
+  } else {
+    tasks.push({ id: 't' + Date.now(), name, wert: val, catId, typ: currentType, frequenz: currentFreq, aktiv: true });
+  }
+  save(SK.tasks, tasks);
+  closeTaskModal();
+  renderSettings();
+  renderToday();
+}
+
+function deleteTask() {
+  if (!editingTaskId) return;
+  if (!confirm('Aufgabe wirklich löschen?')) return;
+  const tasks = getTasks().filter(t => t.id !== editingTaskId);
+  save(SK.tasks, tasks);
+  closeTaskModal();
+  renderSettings();
+  renderToday();
+}
+
+// ── CAT MODAL ─────────────────────────────────────────
+let editingCatId = null;
+
+function openCatModal(catId) {
+  editingCatId = catId || null;
+  document.getElementById('cat-modal-title').textContent = catId ? 'Kategorie bearbeiten' : 'Neue Kategorie';
+  document.getElementById('cat-delete-btn').style.display = catId ? 'block' : 'none';
+
+  if (catId) {
+    const cat = getCats().find(c => c.id === catId);
+    if (cat) {
+      document.getElementById('cat-name-input').value = cat.name;
+      document.getElementById('cat-emoji-input').value = cat.emoji;
+    }
+  } else {
+    document.getElementById('cat-name-input').value = '';
+    document.getElementById('cat-emoji-input').value = '';
+  }
+  document.getElementById('cat-modal').classList.add('open');
+}
+
+function closeCatModal() { document.getElementById('cat-modal').classList.remove('open'); }
+
+function saveCat() {
+  const name = document.getElementById('cat-name-input').value.trim();
+  const emoji = document.getElementById('cat-emoji-input').value.trim() || '📋';
+  if (!name) { document.getElementById('cat-name-input').focus(); return; }
+
+  const cats = getCats();
+  if (editingCatId) {
+    const idx = cats.findIndex(c => c.id === editingCatId);
+    if (idx >= 0) cats[idx] = { ...cats[idx], name, emoji };
+  } else {
+    cats.push({ id: 'cat' + Date.now(), name, emoji });
+  }
+  save(SK.cats, cats);
+  closeCatModal();
+  renderSettings();
+  renderToday();
+}
+
+function deleteCat() {
+  if (!editingCatId) return;
+  if (!confirm('Kategorie löschen? Aufgaben bleiben erhalten.')) return;
+  const cats = getCats().filter(c => c.id !== editingCatId);
+  save(SK.cats, cats);
+  closeCatModal();
+  renderSettings();
+  renderToday();
+}
+
+// ── NAVIGATION ────────────────────────────────────────
+function showScreen(name, btn) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'stats') renderStats();
+  if (name === 'settings') renderSettings();
+  if (name === 'today') renderToday();
+}
+
+// Close modals on backdrop click
+document.getElementById('task-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeTaskModal();
+});
+document.getElementById('cat-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeCatModal();
+});
+
+// ── INIT ──────────────────────────────────────────────
+initData();
+renderToday();
+</script>
+</body>
+</html>
