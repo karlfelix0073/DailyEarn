@@ -1,0 +1,2016 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>DailyEarn</title>
+<style>
+  :root {
+    --bg: #0f0e17;
+    --bg2: #1a1827;
+    --bg3: #242235;
+    --bg4: #2e2b42;
+    --accent: #7c6ff7;
+    --accent2: #a99ff9;
+    --accent-dim: #3d3878;
+    --green: #4ecca3;
+    --green-dim: #1a4a3c;
+    --amber: #f7c948;
+    --amber-dim: #4a3c10;
+    --coral: #ff7e6b;
+    --coral-dim: #4a2020;
+    --text: #e8e6f0;
+    --text2: #9b97b8;
+    --text3: #5a5778;
+    --border: #2e2b42;
+    --border2: #3d3a56;
+    --radius: 14px;
+    --radius-sm: 8px;
+    --nav-h: 68px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 16px; line-height: 1.5; overscroll-behavior: none; }
+  body { display: flex; flex-direction: column; max-width: 480px; margin: 0 auto; min-height: 100vh; }
+  .screen { display: none; flex: 1; overflow-y: auto; padding: 0 0 calc(var(--nav-h) + 12px); }
+  .screen.active { display: block; }
+
+  /* NAV */
+  nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 480px; height: var(--nav-h); background: var(--bg2); border-top: 1px solid var(--border); display: flex; z-index: 100; padding-bottom: env(safe-area-inset-bottom); }
+  .nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; background: none; border: none; color: var(--text3); font-size: 10px; font-weight: 500; cursor: pointer; padding: 8px 2px; transition: color .15s; }
+  .nav-btn.active { color: var(--accent2); }
+  .nav-btn svg { width: 22px; height: 22px; stroke-width: 1.8; }
+
+  /* HEADERS */
+  .page-header { padding: 20px 16px 12px; position: sticky; top: 0; background: var(--bg); z-index: 10; border-bottom: 1px solid var(--border); }
+  .page-header h1 { font-size: 18px; font-weight: 600; }
+  .page-header .sub { font-size: 13px; color: var(--text3); margin-top: 2px; }
+  .section-label { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--text3); margin-bottom: 8px; }
+
+  /* TODAY HERO */
+  .today-hero { padding: 20px 16px 14px; text-align: center; background: var(--bg2); border-bottom: 1px solid var(--border); }
+  .today-date { font-size: 13px; color: var(--text3); margin-bottom: 4px; }
+  .today-earned { font-size: 52px; font-weight: 700; color: var(--accent2); letter-spacing: -2px; line-height: 1; }
+  .today-earned-label { font-size: 12px; color: var(--text3); margin-top: 4px; }
+  .today-streaks { display: flex; justify-content: center; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .streak-pill { display: flex; align-items: center; gap: 5px; background: var(--bg3); border: 1px solid var(--border2); border-radius: 20px; padding: 5px 10px; font-size: 12px; font-weight: 500; }
+  .streak-pill .streak-val { color: var(--accent2); }
+  .wallet-pill { display: flex; align-items: center; gap: 5px; background: var(--bg3); border: 1px solid var(--border2); border-radius: 20px; padding: 5px 10px; font-size: 12px; font-weight: 500; margin-top: 6px; }
+  .wallet-pill.negative { border-color: var(--coral-dim); }
+  .wallet-pill .wallet-val { color: var(--green); }
+  .wallet-pill.negative .wallet-val { color: var(--coral); }
+
+  /* BUDGET BAR */
+  .budget-bar-section { padding: 10px 16px 4px; }
+  .budget-bar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .budget-bar-label { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--text3); }
+  .budget-bar-amounts { font-size: 12px; color: var(--text2); }
+  .budget-bar-wrap { background: var(--bg3); border-radius: 4px; height: 6px; overflow: hidden; }
+  .budget-bar-fill { height: 100%; background: var(--accent); border-radius: 4px; transition: width .4s; }
+  .budget-bar-fill.warn { background: var(--amber); }
+  .budget-bar-fill.full { background: var(--coral); }
+
+  /* BONUS BANNER */
+  .bonus-banner { margin: 10px 16px 0; background: var(--amber-dim); border: 1px solid var(--amber); border-radius: var(--radius); padding: 12px 14px; display: flex; align-items: center; gap: 10px; }
+  .bonus-banner-icon { font-size: 22px; flex-shrink: 0; }
+  .bonus-banner-title { font-size: 14px; font-weight: 600; color: var(--amber); }
+  .bonus-banner-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
+
+  /* WAKEUP */
+  .wakeup-section { padding: 12px 16px; }
+  .wakeup-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .wakeup-btn { background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius-sm); padding: 10px 6px; text-align: center; cursor: pointer; transition: all .15s; }
+  .wakeup-btn.selected { background: var(--accent-dim); border-color: var(--accent); }
+  .wakeup-btn .wk-time { font-size: 13px; font-weight: 600; color: var(--text); }
+  .wakeup-btn .wk-euro { font-size: 12px; color: var(--green); margin-top: 2px; }
+  .wakeup-btn.selected .wk-time { color: var(--accent2); }
+
+  /* TASKS */
+  .tasks-section { padding: 4px 16px 0; }
+  .cat-group { margin-bottom: 16px; }
+  .cat-header { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+  .cat-emoji { font-size: 16px; }
+  .cat-name { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--text3); }
+  .task-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: border-color .15s, background .15s; min-height: 60px; }
+  .task-card:active { background: var(--bg3); }
+  .task-card.done { border-color: var(--green-dim); }
+  .task-check { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--border2); flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all .15s; }
+  .task-card.done .task-check { background: var(--green); border-color: var(--green); }
+  .task-check svg { width: 14px; height: 14px; stroke: var(--bg); display: none; }
+  .task-card.done .task-check svg { display: block; }
+  .task-info { flex: 1; min-width: 0; }
+  .task-name { font-size: 15px; font-weight: 500; color: var(--text); }
+  .task-card.done .task-name { text-decoration: line-through; color: var(--text3); }
+  .task-meta { font-size: 12px; color: var(--text3); margin-top: 2px; }
+  .task-value { font-size: 15px; font-weight: 600; color: var(--green); flex-shrink: 0; }
+  .task-card.done .task-value { color: var(--text3); }
+  .type-badge { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 10px; letter-spacing: .04em; margin-right: 4px; }
+  .badge-optional { background: var(--amber-dim); color: var(--amber); }
+  .badge-xweek { background: var(--accent-dim); color: var(--accent2); }
+
+  /* TODOS */
+  .todos-header-row { display: flex; align-items: center; justify-content: space-between; padding: 20px 16px 12px; position: sticky; top: 0; background: var(--bg); z-index: 10; border-bottom: 1px solid var(--border); }
+  .todos-header-row h1 { font-size: 18px; font-weight: 600; }
+  .archive-btn { background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius-sm); padding: 6px 12px; font-size: 12px; font-weight: 500; color: var(--text2); cursor: pointer; }
+  .todos-section { padding: 12px 16px 0; }
+  .priority-group { margin-bottom: 20px; }
+  .priority-label { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+  .prio-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .prio-dot.hoch { background: var(--coral); }
+  .prio-dot.mittel { background: var(--amber); }
+  .prio-dot.niedrig { background: var(--green); }
+  .todo-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 8px; cursor: pointer; transition: border-color .15s, background .15s; }
+  .todo-card:active { background: var(--bg3); }
+  .todo-card-top { display: flex; align-items: center; gap: 10px; }
+  .todo-prio-badge { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 2px; }
+  .todo-title { font-size: 15px; font-weight: 500; flex: 1; }
+  .todo-value { font-size: 14px; font-weight: 600; color: var(--green); }
+  .todo-meta { font-size: 12px; color: var(--text3); margin-top: 4px; margin-left: 18px; }
+  .todo-subtask-preview { font-size: 12px; color: var(--text3); margin-top: 4px; margin-left: 18px; }
+
+  /* TODO DETAIL MODAL */
+  .todo-detail-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 200; align-items: flex-end; justify-content: center; }
+  .todo-detail-backdrop.open { display: flex; }
+  .todo-detail-modal { background: var(--bg2); border-radius: 20px 20px 0 0; padding: 20px 16px 32px; width: 100%; max-width: 480px; max-height: 88vh; overflow-y: auto; }
+  .subtask-list { margin: 12px 0; }
+  .subtask-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); cursor: pointer; }
+  .subtask-item:last-child { border-bottom: none; }
+  .subtask-check { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border2); flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all .15s; }
+  .subtask-item.done .subtask-check { background: var(--green); border-color: var(--green); }
+  .subtask-check svg { width: 12px; height: 12px; stroke: var(--bg); display: none; }
+  .subtask-item.done .subtask-check svg { display: block; }
+  .subtask-text { font-size: 14px; flex: 1; }
+  .subtask-item.done .subtask-text { text-decoration: line-through; color: var(--text3); }
+  .complete-todo-btn { width: 100%; background: var(--green); border: none; border-radius: var(--radius-sm); padding: 14px; font-size: 15px; font-weight: 600; color: var(--bg); cursor: pointer; margin-top: 16px; }
+  .complete-todo-btn:active { opacity: .85; }
+
+  /* ARCHIVE VIEW */
+  .archive-item { background: var(--bg2); border: 1px solid var(--green-dim); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+  .archive-item-name { font-size: 14px; font-weight: 500; color: var(--text3); text-decoration: line-through; }
+  .archive-item-right { text-align: right; }
+  .archive-item-val { font-size: 13px; color: var(--green); font-weight: 600; }
+  .archive-item-date { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+  /* WALLET */
+  .wallet-hero { padding: 20px 16px 16px; background: var(--bg2); border-bottom: 1px solid var(--border); text-align: center; }
+  .wallet-balance-label { font-size: 13px; color: var(--text3); margin-bottom: 4px; }
+  .wallet-balance { font-size: 48px; font-weight: 700; letter-spacing: -2px; line-height: 1; color: var(--green); }
+  .wallet-balance.negative { color: var(--coral); }
+  .wallet-balance-sub { font-size: 12px; color: var(--text3); margin-top: 4px; }
+  .wallet-warning { margin: 10px 16px 0; background: var(--coral-dim); border: 1px solid var(--coral); border-radius: var(--radius); padding: 10px 14px; font-size: 13px; color: var(--coral); }
+  .wallet-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 14px 16px 0; }
+  .wallet-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
+  .wallet-card-label { font-size: 11px; color: var(--text3); font-weight: 500; letter-spacing: .04em; margin-bottom: 4px; }
+  .wallet-card-val { font-size: 22px; font-weight: 700; color: var(--accent2); }
+  .wallet-card-val.green { color: var(--green); }
+  .wallet-card-val.coral { color: var(--coral); }
+  .ausgaben-section { padding: 14px 16px 0; }
+  .ausgabe-row { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .ausgabe-left { flex: 1; min-width: 0; }
+  .ausgabe-title { font-size: 14px; font-weight: 500; }
+  .ausgabe-date { font-size: 12px; color: var(--text3); margin-top: 2px; }
+  .ausgabe-notiz { font-size: 12px; color: var(--text3); margin-top: 2px; font-style: italic; }
+  .ausgabe-betrag { font-size: 15px; font-weight: 600; color: var(--coral); flex-shrink: 0; }
+  .ausgabe-del { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 18px; padding: 4px; flex-shrink: 0; }
+  .add-ausgabe-btn { width: calc(100% - 32px); margin: 14px 16px 0; background: var(--bg3); border: 1px dashed var(--border2); border-radius: var(--radius); padding: 14px; text-align: center; color: var(--accent2); font-size: 14px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 52px; }
+  .add-ausgabe-btn:active { background: var(--bg4); }
+
+  /* STATS */
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 16px; }
+  .stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+  .stat-label { font-size: 11px; color: var(--text3); font-weight: 500; letter-spacing: .04em; margin-bottom: 4px; }
+  .stat-val { font-size: 28px; font-weight: 700; color: var(--accent2); }
+  .stat-val.green { color: var(--green); }
+  .stat-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+  .stats-section { padding: 0 16px 16px; }
+  .task-stat-row { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
+  .task-stat-name { font-size: 14px; font-weight: 500; }
+  .task-stat-right { text-align: right; }
+  .task-stat-count { font-size: 13px; color: var(--text2); }
+  .task-stat-streak { font-size: 12px; color: var(--accent2); margin-top: 2px; }
+  .week-bar { margin: 0 16px 16px; }
+  .week-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .day-dot { background: var(--bg3); border-radius: 6px; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 2px; }
+  .day-dot.done { background: var(--green-dim); }
+  .day-dot.today { border: 1px solid var(--accent); }
+  .day-dot .day-name { font-size: 9px; color: var(--text3); font-weight: 600; }
+  .day-dot.done .day-name { color: var(--green); }
+  .day-dot .day-check { font-size: 12px; }
+  .milestones-section { padding: 0 16px 16px; }
+  .milestone-row { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; }
+  .milestone-row.achieved { border-color: var(--amber); background: var(--amber-dim); }
+  .milestone-icon { font-size: 22px; flex-shrink: 0; }
+  .milestone-info { flex: 1; }
+  .milestone-name { font-size: 14px; font-weight: 500; }
+  .milestone-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+  .milestone-row.achieved .milestone-name { color: var(--amber); }
+  .milestone-val { font-size: 15px; font-weight: 700; color: var(--green); }
+  .milestone-row.achieved .milestone-val { color: var(--amber); }
+  .progress-bar-wrap { background: var(--bg3); border-radius: 4px; height: 6px; margin-top: 6px; overflow: hidden; }
+  .progress-bar { height: 100%; background: var(--accent); border-radius: 4px; transition: width .3s; }
+
+  /* SETTINGS */
+  .settings-section { padding: 16px; }
+  .settings-group { margin-bottom: 20px; }
+  .settings-group-title { font-size: 12px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px; }
+  .settings-item { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; min-height: 56px; }
+  .settings-item:active { background: var(--bg3); }
+  .settings-item-left { flex: 1; min-width: 0; }
+  .settings-item-name { font-size: 15px; font-weight: 500; }
+  .settings-item-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+  .settings-item-right { color: var(--text3); flex-shrink: 0; }
+  .add-btn { width: 100%; background: var(--bg3); border: 1px dashed var(--border2); border-radius: var(--radius); padding: 14px; text-align: center; color: var(--accent2); font-size: 14px; font-weight: 500; cursor: pointer; min-height: 52px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .add-btn:active { background: var(--bg4); }
+  .action-btn { width: 100%; background: var(--bg2); border: 1px solid var(--border2); border-radius: var(--radius); padding: 14px 16px; text-align: left; color: var(--text); font-size: 15px; font-weight: 500; cursor: pointer; min-height: 52px; display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .action-btn:active { background: var(--bg3); }
+  .action-btn .action-icon { font-size: 20px; }
+  .action-btn .action-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+  .budget-setting-row { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 56px; }
+  .budget-val-display { font-size: 18px; font-weight: 700; color: var(--accent2); }
+
+  /* MODALS */
+  .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 200; align-items: flex-end; justify-content: center; }
+  .modal-backdrop.open { display: flex; }
+  .modal { background: var(--bg2); border-radius: 20px 20px 0 0; padding: 20px 16px 32px; width: 100%; max-width: 480px; max-height: 92vh; overflow-y: auto; }
+  .modal-handle { width: 36px; height: 4px; background: var(--border2); border-radius: 2px; margin: 0 auto 20px; }
+  .modal-title { font-size: 18px; font-weight: 600; margin-bottom: 20px; }
+  .form-group { margin-bottom: 16px; }
+  .form-label { font-size: 13px; font-weight: 500; color: var(--text2); margin-bottom: 6px; display: block; }
+  .form-input { width: 100%; background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 16px; color: var(--text); outline: none; }
+  .form-input:focus { border-color: var(--accent); }
+  .form-select { width: 100%; background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 16px; color: var(--text); outline: none; appearance: none; }
+  .form-textarea { width: 100%; background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 15px; color: var(--text); outline: none; resize: none; font-family: inherit; }
+  .form-textarea:focus { border-color: var(--accent); }
+  .seg-control { display: grid; gap: 6px; }
+  .seg-btn { background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 14px; font-weight: 500; color: var(--text2); cursor: pointer; text-align: left; transition: all .15s; }
+  .seg-btn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent2); }
+  .seg-btn small { display: block; font-size: 12px; font-weight: 400; color: var(--text3); margin-top: 2px; }
+  .seg-btn.active small { color: var(--accent); }
+  .xweek-num { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+  .xweek-num button { width: 40px; height: 40px; border-radius: 50%; background: var(--bg3); border: 1px solid var(--border2); color: var(--text); font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .num-val { font-size: 24px; font-weight: 700; color: var(--accent2); min-width: 32px; text-align: center; }
+  .modal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 24px; }
+  .btn-primary { background: var(--accent); border: none; border-radius: var(--radius-sm); padding: 14px; font-size: 15px; font-weight: 600; color: #fff; cursor: pointer; }
+  .btn-primary:active { opacity: .85; }
+  .btn-secondary { background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius-sm); padding: 14px; font-size: 15px; font-weight: 500; color: var(--text2); cursor: pointer; }
+  .btn-danger { background: var(--coral-dim); border: 1px solid var(--coral); border-radius: var(--radius-sm); padding: 14px; font-size: 15px; font-weight: 500; color: var(--coral); cursor: pointer; margin-top: 8px; width: 100%; }
+  .subtask-input-row { display: flex; gap: 8px; margin-bottom: 8px; }
+  .subtask-input-row input { flex: 1; }
+  .subtask-input-row button { background: var(--accent-dim); border: 1px solid var(--accent); border-radius: var(--radius-sm); color: var(--accent2); font-size: 20px; width: 44px; height: 44px; cursor: pointer; flex-shrink: 0; }
+  .subtask-tag { display: flex; align-items: center; gap: 6px; background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius-sm); padding: 6px 10px; margin-bottom: 6px; font-size: 13px; }
+  .subtask-tag-text { flex: 1; }
+  .subtask-tag-del { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 16px; }
+  .tab-row { display: flex; gap: 8px; margin-bottom: 16px; }
+  .tab-btn { flex: 1; padding: 8px; background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; color: var(--text3); cursor: pointer; }
+  .tab-btn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent2); }
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .toggle-row:last-child { border-bottom: none; }
+  .toggle-label { font-size: 14px; font-weight: 500; }
+  .toggle-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+  .toggle-switch { position: relative; width: 44px; height: 26px; flex-shrink: 0; }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider { position: absolute; inset: 0; background: var(--bg4); border-radius: 13px; cursor: pointer; transition: background .2s; }
+  .toggle-slider:before { content: ''; position: absolute; width: 20px; height: 20px; left: 3px; top: 3px; background: var(--text3); border-radius: 50%; transition: transform .2s, background .2s; }
+  input:checked + .toggle-slider { background: var(--accent-dim); }
+  input:checked + .toggle-slider:before { transform: translateX(18px); background: var(--accent2); }
+  .empty-state { text-align: center; padding: 40px 16px; color: var(--text3); font-size: 14px; }
+  .empty-icon { font-size: 36px; margin-bottom: 8px; }
+  .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--bg2); border: 1px solid var(--green); border-radius: var(--radius); padding: 12px 20px; font-size: 14px; font-weight: 500; color: var(--green); z-index: 999; opacity: 0; transition: opacity .3s; pointer-events: none; white-space: nowrap; max-width: 90vw; }
+  .toast.show { opacity: 1; }
+  .budget-limit-reached { margin: 10px 16px 0; background: var(--accent-dim); border: 1px solid var(--accent); border-radius: var(--radius); padding: 12px 14px; display: flex; align-items: center; gap: 10px; }
+  .budget-limit-reached-icon { font-size: 22px; flex-shrink: 0; }
+  .budget-limit-reached-title { font-size: 14px; font-weight: 600; color: var(--accent2); }
+  .budget-limit-reached-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .prio-seg { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; }
+  .prio-seg-btn { background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius-sm); padding: 10px 6px; font-size: 13px; font-weight: 500; color: var(--text2); cursor: pointer; text-align: center; transition: all .15s; }
+  .prio-seg-btn.active-hoch { background: var(--coral-dim); border-color: var(--coral); color: var(--coral); }
+  .prio-seg-btn.active-mittel { background: var(--amber-dim); border-color: var(--amber); color: var(--amber); }
+  .prio-seg-btn.active-niedrig { background: var(--green-dim); border-color: var(--green); color: var(--green); }
+  .budget-num-row { display: flex; align-items: center; gap: 12px; }
+  .budget-num-row button { width: 40px; height: 40px; border-radius: 50%; background: var(--bg3); border: 1px solid var(--border2); color: var(--text); font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .budget-num-display { font-size: 28px; font-weight: 700; color: var(--accent2); flex: 1; text-align: center; }
+
+  /* URLAUBS-MODUS */
+  .urlaub-banner { margin: 10px 16px 0; background: #1a2e3c; border: 1px solid #4ecca3; border-radius: var(--radius); padding: 12px 14px; display: flex; align-items: center; gap: 10px; }
+  .urlaub-banner-icon { font-size: 22px; flex-shrink: 0; }
+  .urlaub-banner-title { font-size: 14px; font-weight: 600; color: var(--green); }
+  .urlaub-banner-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .task-card.paused { opacity: .45; cursor: default; }
+  .task-card.paused .task-check { border-color: var(--text3); }
+  .paused-badge { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 10px; letter-spacing: .04em; margin-right: 4px; background: #1a2e3c; color: var(--green); }
+
+  /* KALENDER */
+  .cal-nav { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px 8px; }
+  .cal-nav-btn { background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius-sm); color: var(--text2); font-size: 18px; width: 36px; height: 36px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .cal-nav-title { font-size: 15px; font-weight: 600; color: var(--text); }
+  .cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 3px; padding: 0 16px 16px; }
+  .cal-day-header { font-size: 10px; font-weight: 600; text-align: center; color: var(--text3); padding: 4px 0; text-transform: uppercase; }
+  .cal-day { aspect-ratio: 1; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; color: var(--text3); cursor: pointer; position: relative; }
+  .cal-day.has-data { background: var(--bg3); color: var(--text); }
+  .cal-day.done { background: var(--green-dim); color: var(--green); }
+  .cal-day.partial { background: var(--amber-dim); color: var(--amber); }
+  .cal-day.today { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .cal-day.future { opacity: .3; cursor: default; }
+  .cal-day.empty { background: none; cursor: default; }
+  .cal-day-detail { margin: 0 16px 16px; background: var(--bg2); border: 1px solid var(--border2); border-radius: var(--radius); padding: 14px; }
+  .cal-day-detail-date { font-size: 13px; font-weight: 600; color: var(--text2); margin-bottom: 8px; }
+  .cal-day-detail-row { display: flex; justify-content: space-between; font-size: 13px; padding: 4px 0; border-bottom: 1px solid var(--border); }
+  .cal-day-detail-row:last-child { border-bottom: none; }
+  .cal-day-detail-val { color: var(--green); font-weight: 600; }
+
+  /* INFO SEKTION */
+  .info-section { padding: 0 16px 16px; }
+  .info-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 10px; overflow: hidden; }
+  .info-card-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; cursor: pointer; }
+  .info-card-title { font-size: 15px; font-weight: 500; display: flex; align-items: center; gap: 8px; }
+  .info-card-chevron { font-size: 16px; color: var(--text3); transition: transform .2s; }
+  .info-card-chevron.open { transform: rotate(180deg); }
+  .info-card-body { padding: 0 16px 14px; font-size: 14px; color: var(--text2); line-height: 1.7; display: none; }
+  .info-card-body.open { display: block; }
+  .info-card-body p { margin-bottom: 8px; }
+  .info-card-body p:last-child { margin-bottom: 0; }
+  .info-table { width: 100%; font-size: 13px; border-collapse: collapse; margin-top: 6px; }
+  .info-table th { text-align: left; color: var(--text3); font-weight: 500; padding: 4px 0; border-bottom: 1px solid var(--border); }
+  .info-table td { padding: 5px 0; border-bottom: 1px solid var(--border); color: var(--text2); vertical-align: top; }
+  .info-table td:last-child { color: var(--green); font-weight: 600; text-align: right; }
+  .info-table tr:last-child td { border-bottom: none; }
+</style>
+</head>
+<body>
+
+<!-- HEUTE -->
+<div class="screen active" id="screen-today">
+  <div class="today-hero">
+    <div class="today-date" id="today-date"></div>
+    <div class="today-earned"><span style="font-size:22px;font-weight:400;color:var(--text3)">€</span><span id="today-amount">0,00</span></div>
+    <div class="today-earned-label">heute verdient</div>
+    <div class="today-streaks">
+      <div class="streak-pill">🔥 <span class="streak-val" id="main-streak-val">0</span> Tage</div>
+      <div class="streak-pill">📅 <span class="streak-val" id="week-amount">0,00</span> € Woche</div>
+      <div class="streak-pill">🏆 <span class="streak-val" id="total-amount">0,00</span> € Gesamt</div>
+    </div>
+    <div style="display:flex;justify-content:center;margin-top:6px;">
+      <div class="wallet-pill" id="wallet-pill">💸 Guthaben: <span class="wallet-val" id="wallet-pill-val">0,00 €</span></div>
+    </div>
+  </div>
+  <div class="budget-bar-section">
+    <div class="budget-bar-header">
+      <span class="budget-bar-label">Monatsbudget</span>
+      <span class="budget-bar-amounts" id="budget-bar-text">0 / 250 €</span>
+    </div>
+    <div class="budget-bar-wrap"><div class="budget-bar-fill" id="budget-bar-fill" style="width:0%"></div></div>
+  </div>
+  <div id="bonus-container"></div>
+  <div id="budget-limit-container"></div>
+  <div id="urlaub-banner-container"></div>
+  <div class="wakeup-section">
+    <div class="section-label">Aufstehzeit</div>
+    <div class="wakeup-grid">
+      <div class="wakeup-btn" onclick="setWakeup('5-6')" id="wk-5-6"><div class="wk-time">5–6 Uhr</div><div class="wk-euro">+2,00 €</div></div>
+      <div class="wakeup-btn" onclick="setWakeup('6-7')" id="wk-6-7"><div class="wk-time">6–7 Uhr</div><div class="wk-euro">+1,00 €</div></div>
+      <div class="wakeup-btn" onclick="setWakeup('7-8')" id="wk-7-8"><div class="wk-time">7–8 Uhr</div><div class="wk-euro">+0,50 €</div></div>
+    </div>
+  </div>
+  <div class="tasks-section" id="tasks-container"></div>
+</div>
+
+<!-- TODOS -->
+<div class="screen" id="screen-todos">
+  <div class="todos-header-row">
+    <h1>Todos</h1>
+    <button class="archive-btn" onclick="toggleArchive()">📦 Archiv</button>
+  </div>
+  <div id="todos-active-view">
+    <div class="todos-section" id="todos-container"></div>
+    <div style="padding:0 16px 16px;">
+      <div class="add-btn" onclick="openTodoModal()">+ Todo hinzufügen</div>
+    </div>
+  </div>
+  <div id="todos-archive-view" style="display:none">
+    <div class="todos-section" id="todos-archive-container"></div>
+  </div>
+</div>
+
+<!-- WALLET -->
+<div class="screen" id="screen-wallet">
+  <div class="wallet-hero">
+    <div class="wallet-balance-label">Verfügbares Guthaben</div>
+    <div class="wallet-balance" id="wallet-balance">0,00 €</div>
+    <div class="wallet-balance-sub">Verdient minus Ausgegeben</div>
+  </div>
+  <div id="wallet-warning-container"></div>
+  <div class="wallet-cards">
+    <div class="wallet-card">
+      <div class="wallet-card-label">VERDIENT</div>
+      <div class="wallet-card-val green" id="wallet-total-earned">0,00 €</div>
+    </div>
+    <div class="wallet-card">
+      <div class="wallet-card-label">AUSGEGEBEN</div>
+      <div class="wallet-card-val coral" id="wallet-total-spent">0,00 €</div>
+    </div>
+  </div>
+  <div class="ausgaben-section">
+    <div class="section-label" style="margin-bottom:10px">Ausgaben</div>
+    <div id="ausgaben-list"></div>
+  </div>
+  <div class="add-ausgabe-btn" onclick="openAusgabeModal()">+ Ausgabe eintragen</div>
+</div>
+
+<!-- STATISTIK -->
+<div class="screen" id="screen-stats">
+  <div class="page-header"><h1>Statistik</h1></div>
+  <div style="padding:16px 16px 0">
+    <div class="tab-row">
+      <button class="tab-btn active" onclick="setStatTab('week',this)">Diese Woche</button>
+      <button class="tab-btn" onclick="setStatTab('month',this)">Dieser Monat</button>
+      <button class="tab-btn" onclick="setStatTab('cal',this)">Kalender</button>
+    </div>
+  </div>
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-label">VERDIENT</div><div class="stat-val green" id="stat-earned">0,00 €</div><div class="stat-sub" id="stat-period">diese Woche</div></div>
+    <div class="stat-card"><div class="stat-label">MAIN STREAK</div><div class="stat-val" id="stat-streak">🔥 0</div><div class="stat-sub">Tage in Folge</div></div>
+    <div class="stat-card"><div class="stat-label">ERLEDIGT</div><div class="stat-val" id="stat-rate">0%</div><div class="stat-sub">aller Daily-Tasks</div></div>
+    <div class="stat-card"><div class="stat-label">GESAMT</div><div class="stat-val" id="stat-total">0,00 €</div><div class="stat-sub">seit Start</div></div>
+  </div>
+  <div id="cal-container" style="display:none"></div>
+  <div class="week-bar" id="week-bar"></div>
+  <div class="milestones-section">
+    <div class="section-label" style="margin-bottom:10px">Streak-Meilensteine</div>
+    <div id="milestones-list"></div>
+  </div>
+  <div class="stats-section">
+    <div class="section-label" style="padding:0 0 8px">Aufgaben-Details</div>
+    <div id="task-stats-list"></div>
+  </div>
+</div>
+
+<!-- EINSTELLUNGEN -->
+<div class="screen" id="screen-settings">
+  <div class="page-header"><h1>Einstellungen</h1></div>
+  <div class="settings-section">
+    <div class="settings-group">
+      <div class="settings-group-title">Monatsbudget</div>
+      <div class="budget-setting-row">
+        <div class="settings-item-left">
+          <div class="settings-item-name">Budget-Limit</div>
+          <div class="settings-item-sub">Maximaler Betrag pro Monat</div>
+        </div>
+        <div class="budget-val-display" id="budget-display">250 €</div>
+        <div style="color:var(--text3);cursor:pointer;padding:4px 0 4px 10px" onclick="openBudgetModal()">›</div>
+      </div>
+    </div>
+    <div class="settings-group">
+      <div class="settings-group-title">Kategorien</div>
+      <div id="cat-list"></div>
+      <div class="add-btn" onclick="openCatModal()">+ Kategorie hinzufügen</div>
+    </div>
+    <div class="settings-group">
+      <div class="settings-group-title">Aufgaben</div>
+      <div id="task-list-settings"></div>
+      <div class="add-btn" onclick="openTaskModal()">+ Aufgabe hinzufügen</div>
+    </div>
+    <div class="settings-group">
+      <div class="settings-group-title">Urlaubs-Modus</div>
+      <div id="urlaub-setting-display" class="settings-item" onclick="openUrlaubModal()">
+        <div class="settings-item-left">
+          <div class="settings-item-name" id="urlaub-setting-name">Kein Urlaub aktiv</div>
+          <div class="settings-item-sub" id="urlaub-setting-sub">Tippen um Urlaub einzustellen</div>
+        </div>
+        <div class="settings-item-right">›</div>
+      </div>
+    </div>
+    <div class="settings-group">
+      <div class="settings-group-title">Hilfe & Info</div>
+      <div class="action-btn" onclick="openInfoScreen()">
+        <span class="action-icon">💡</span>
+        <div><div>Wie funktioniert DailyEarn?</div><div class="action-sub">Erklärungen zu allen Funktionen</div></div>
+      </div>
+    </div>
+    <div class="settings-group">
+      <div class="settings-group-title">Daten</div>
+      <div class="action-btn" onclick="exportData()">
+        <span class="action-icon">📤</span>
+        <div><div>Daten exportieren</div><div class="action-sub">Alle Einstellungen & Fortschritt als Datei speichern</div></div>
+      </div>
+      <div class="action-btn" onclick="document.getElementById('import-file').click()">
+        <span class="action-icon">📥</span>
+        <div><div>Daten importieren</div><div class="action-sub">Backup wiederherstellen oder Gerät wechseln</div></div>
+      </div>
+      <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+      <div class="action-btn" onclick="confirmReset()" style="color:var(--coral)">
+        <span class="action-icon">🗑️</span>
+        <div><div>Alle Daten löschen</div><div class="action-sub">Nicht rückgängig zu machen</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- INFO SCREEN -->
+<div class="screen" id="screen-info">
+  <div class="page-header" style="display:flex;align-items:center;gap:10px;">
+    <button onclick="closeInfoScreen()" style="background:none;border:none;color:var(--text2);font-size:22px;cursor:pointer;padding:0;line-height:1;">‹</button>
+    <h1>Wie funktioniert DailyEarn?</h1>
+  </div>
+  <div class="info-section" style="padding-top:16px">
+
+    <div class="info-card">
+      <div class="info-card-header" onclick="toggleInfo(this)">
+        <div class="info-card-title">🔥 Das Prinzip</div>
+        <div class="info-card-chevron">▾</div>
+      </div>
+      <div class="info-card-body">
+        <p>DailyEarn belohnt dich mit virtuellem Geld für erledigte Aufgaben. Das Geld ist rein motivational — es kommt aus deiner eigenen Tasche und motiviert dich, Gewohnheiten durchzuhalten.</p>
+        <p><strong style="color:var(--accent2)">Wichtig:</strong> Streak-Boni bringen deutlich mehr als einzelne Tasks. Eine Woche durchhalten lohnt sich mehr als einzelne Tage.</p>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <div class="info-card-header" onclick="toggleInfo(this)">
+        <div class="info-card-title">📋 Die drei Task-Typen</div>
+        <div class="info-card-chevron">▾</div>
+      </div>
+      <div class="info-card-body">
+        <table class="info-table">
+          <tr><th>Typ</th><th>Beschreibung</th></tr>
+          <tr><td>🟣 Daily</td><td>Täglich Pflicht — zählt zum Main-Streak</td></tr>
+          <tr><td>🟢 X/Woche</td><td>X-mal pro Woche, beliebige Tage — eigener Streak</td></tr>
+          <tr><td>🟡 Optional</td><td>Freiwillig — kein Einfluss auf den Streak</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <div class="info-card-header" onclick="toggleInfo(this)">
+        <div class="info-card-title">⭐ Streak-Boni & Meilensteine</div>
+        <div class="info-card-chevron">▾</div>
+      </div>
+      <div class="info-card-body">
+        <table class="info-table">
+          <tr><th>Bonus</th><th>Betrag</th></tr>
+          <tr><td>⭐ Wochen-Bonus (jeden Sonntag)</td><td>+15,00 €</td></tr>
+          <tr><td>🏅 5 Wochen Streak (35 Tage)</td><td>+50,00 €</td></tr>
+          <tr><td>🏆 10 Wochen Streak (70 Tage)</td><td>+100,00 €</td></tr>
+          <tr><td>💎 6 Monate Streak (180 Tage)</td><td>+200,00 €</td></tr>
+        </table>
+        <p style="margin-top:8px">Der Wochen-Bonus wird jeden Sonntag gutgeschrieben, wenn alle Daily-Tasks die gesamte Woche erledigt wurden.</p>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <div class="info-card-header" onclick="toggleInfo(this)">
+        <div class="info-card-title">💸 Das Wallet</div>
+        <div class="info-card-chevron">▾</div>
+      </div>
+      <div class="info-card-body">
+        <p>Im Wallet siehst du dein verfügbares Guthaben: alles Verdiente minus alle eingetragenen Ausgaben.</p>
+        <p>Wenn du Geld wirklich ausgibst (z.B. für einen Urlaub), trägst du die Ausgabe manuell ein. Das Guthaben kann dabei auch negativ werden — das ist erlaubt und zeigt dir, dass du mehr ausgegeben als verdient hast.</p>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <div class="info-card-header" onclick="toggleInfo(this)">
+        <div class="info-card-title">💰 Das Monatsbudget</div>
+        <div class="info-card-chevron">▾</div>
+      </div>
+      <div class="info-card-body">
+        <p>Das Budget-Limit schützt dein Portemonnaie — da das Geld aus deiner eigenen Tasche kommt. Standard sind 250 €/Monat, du kannst es frei anpassen.</p>
+        <p>Wenn das Limit erreicht ist, kannst du Tasks weiterhin abhaken und dein <strong style="color:var(--accent2)">Streak läuft ungehindert weiter</strong> — du bekommst nur kein Geld mehr gutgeschrieben.</p>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <div class="info-card-header" onclick="toggleInfo(this)">
+        <div class="info-card-title">🏖️ Urlaubs-Modus</div>
+        <div class="info-card-chevron">▾</div>
+      </div>
+      <div class="info-card-body">
+        <p>Im Urlaubs-Modus werden Tasks, die du als „pausierbar" markiert hast, ausgegraut und zählen automatisch als erfüllt — ohne Belohnung.</p>
+        <p>Dein Main-Streak und der Wochen-Bonus laufen normal weiter, solange du die nicht-pausierbaren Daily-Tasks erledigst. X/Woche-Tasks werden für Wochen mit Urlaub eingefroren.</p>
+        <p>Den Urlaubs-Modus aktivierst du in den Einstellungen mit Start- und Enddatum. Er endet automatisch.</p>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <div class="info-card-header" onclick="toggleInfo(this)">
+        <div class="info-card-title">💾 Datensicherheit</div>
+        <div class="info-card-chevron">▾</div>
+      </div>
+      <div class="info-card-body">
+        <p>Alle Daten werden lokal in deinem Browser gespeichert (localStorage). Es gibt keinen Server und kein Login.</p>
+        <p><strong style="color:var(--coral)">Wichtig:</strong> Beim Leeren des Browser-Caches gehen alle Daten verloren. Exportiere regelmäßig ein Backup unter Einstellungen → Daten exportieren.</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<nav>
+  <button class="nav-btn active" onclick="showScreen('today',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+    Heute
+  </button>
+  <button class="nav-btn" onclick="showScreen('todos',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+    Todos
+  </button>
+  <button class="nav-btn" onclick="showScreen('wallet',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M16 12h.01"/><path d="M2 10h20"/></svg>
+    Wallet
+  </button>
+  <button class="nav-btn" onclick="showScreen('stats',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    Statistik
+  </button>
+  <button class="nav-btn" onclick="showScreen('settings',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    Einstellungen
+  </button>
+</nav>
+
+<!-- TASK MODAL -->
+<div class="modal-backdrop" id="task-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="task-modal-title">Neue Aufgabe</div>
+    <div class="form-group">
+      <label class="form-label">Name</label>
+      <input class="form-input" id="task-name-input" placeholder="z.B. Bass üben" maxlength="40">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Kategorie</label>
+      <select class="form-select" id="task-cat-select"></select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Typ</label>
+      <div class="seg-control">
+        <button class="seg-btn active" onclick="selectType('daily',this)"><span>🟣 Daily</span><small>Täglich — zählt zum Main-Streak</small></button>
+        <button class="seg-btn" onclick="selectType('xweek',this)"><span>🟢 X mal pro Woche</span><small>Beliebige Tage — eigener Streak</small></button>
+        <button class="seg-btn" onclick="selectType('optional',this)"><span>🟡 Optional</span><small>Kein Muss — Bonus wenn erledigt</small></button>
+      </div>
+    </div>
+    <div class="form-group" id="freq-group" style="display:none">
+      <label class="form-label">Wie oft pro Woche?</label>
+      <div class="xweek-num">
+        <button onclick="changeFreq(-1)">−</button>
+        <div class="num-val" id="freq-num">3</div>
+        <button onclick="changeFreq(1)">+</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Wert (€)</label>
+      <input class="form-input" id="task-value-input" type="number" min="0" max="999" step="0.5" placeholder="0.00">
+    </div>
+    <div class="form-group" id="urlaub-toggle-group">
+      <label class="form-label">Urlaubs-Modus</label>
+      <div class="toggle-row" style="border:none;padding:0">
+        <div>
+          <div class="toggle-label" style="font-size:14px">Im Urlaub pausieren</div>
+          <div class="toggle-sub">Task wird während des Urlaubs übersprungen</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="task-urlaub-toggle">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeTaskModal()">Abbrechen</button>
+      <button class="btn-primary" onclick="saveTask()">Speichern</button>
+    </div>
+    <button class="btn-danger" id="task-delete-btn" onclick="deleteTask()" style="display:none">Aufgabe löschen</button>
+  </div>
+</div>
+
+<!-- CAT MODAL -->
+<div class="modal-backdrop" id="cat-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="cat-modal-title">Neue Kategorie</div>
+    <div class="form-group">
+      <label class="form-label">Name</label>
+      <input class="form-input" id="cat-name-input" placeholder="z.B. Haushalt" maxlength="24">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Emoji</label>
+      <input class="form-input" id="cat-emoji-input" placeholder="🏠" maxlength="4" style="font-size:24px;text-align:center">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeCatModal()">Abbrechen</button>
+      <button class="btn-primary" onclick="saveCat()">Speichern</button>
+    </div>
+    <button class="btn-danger" id="cat-delete-btn" onclick="deleteCat()" style="display:none">Kategorie löschen</button>
+  </div>
+</div>
+
+<!-- TODO MODAL -->
+<div class="modal-backdrop" id="todo-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="todo-modal-title">Neues Todo</div>
+    <div class="form-group">
+      <label class="form-label">Titel</label>
+      <input class="form-input" id="todo-title-input" placeholder="z.B. Balkon-Beleuchtung" maxlength="60">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Beschreibung (optional)</label>
+      <textarea class="form-textarea" id="todo-desc-input" placeholder="Details, Links, Notizen…" rows="3" maxlength="300"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Kategorie</label>
+      <select class="form-select" id="todo-cat-select"></select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Priorität</label>
+      <div class="prio-seg">
+        <button class="prio-seg-btn" onclick="selectPrio('hoch',this)">🔴 Hoch</button>
+        <button class="prio-seg-btn active-mittel" onclick="selectPrio('mittel',this)">🟡 Mittel</button>
+        <button class="prio-seg-btn" onclick="selectPrio('niedrig',this)">🟢 Niedrig</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Wert (€)</label>
+      <input class="form-input" id="todo-value-input" type="number" min="0" max="9999" step="0.5" placeholder="0.00">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Subtasks (optional)</label>
+      <div class="subtask-input-row">
+        <input class="form-input" id="subtask-input" placeholder="Subtask hinzufügen…" maxlength="80" onkeydown="if(event.key==='Enter'){addSubtask();event.preventDefault();}">
+        <button onclick="addSubtask()">+</button>
+      </div>
+      <div id="subtask-list-edit"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeTodoModal()">Abbrechen</button>
+      <button class="btn-primary" onclick="saveTodo()">Speichern</button>
+    </div>
+    <button class="btn-danger" id="todo-delete-btn" onclick="deleteTodo()" style="display:none">Todo löschen</button>
+  </div>
+</div>
+
+<!-- TODO DETAIL -->
+<div class="todo-detail-backdrop" id="todo-detail-modal">
+  <div class="todo-detail-modal">
+    <div class="modal-handle"></div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
+      <div class="modal-title" id="detail-title" style="margin-bottom:0;flex:1;margin-right:10px"></div>
+      <button onclick="openTodoModalFromDetail()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text2);font-size:13px;padding:6px 12px;cursor:pointer;flex-shrink:0;">Bearbeiten</button>
+    </div>
+    <div id="detail-cat-badge" style="margin-bottom:12px;font-size:12px;color:var(--text3)"></div>
+    <div id="detail-desc" style="font-size:14px;color:var(--text2);margin-bottom:12px;line-height:1.6;"></div>
+    <div id="detail-subtasks"></div>
+    <button class="complete-todo-btn" id="detail-complete-btn" onclick="completeTodo()">✓ Als erledigt markieren — <span id="detail-wert"></span> verdienen</button>
+    <button class="btn-secondary" onclick="closeTodoDetail()" style="width:100%;margin-top:8px;">Schließen</button>
+  </div>
+</div>
+
+<!-- AUSGABE MODAL -->
+<div class="modal-backdrop" id="ausgabe-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="ausgabe-modal-title">Ausgabe eintragen</div>
+    <div class="form-group">
+      <label class="form-label">Titel</label>
+      <input class="form-input" id="ausgabe-title-input" placeholder="z.B. Urlaub Mallorca" maxlength="60">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Betrag (€)</label>
+      <input class="form-input" id="ausgabe-betrag-input" type="number" min="0" step="0.01" placeholder="0.00">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Datum</label>
+      <input class="form-input" id="ausgabe-datum-input" type="date">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notiz (optional)</label>
+      <input class="form-input" id="ausgabe-notiz-input" placeholder="z.B. Flug + Hotel" maxlength="80">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeAusgabeModal()">Abbrechen</button>
+      <button class="btn-primary" onclick="saveAusgabe()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- URLAUB MODAL -->
+<div class="modal-backdrop" id="urlaub-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Urlaubs-Modus</div>
+    <div id="urlaub-aktiv-info" style="display:none;margin-bottom:16px;background:var(--green-dim);border:1px solid var(--green);border-radius:var(--radius-sm);padding:12px 14px;font-size:14px;color:var(--green);"></div>
+    <div class="form-group">
+      <label class="form-label">Von</label>
+      <input class="form-input" id="urlaub-von-input" type="date">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Bis</label>
+      <input class="form-input" id="urlaub-bis-input" type="date">
+    </div>
+    <div style="background:var(--bg3);border-radius:var(--radius-sm);padding:12px 14px;font-size:13px;color:var(--text2);margin-bottom:4px;line-height:1.6;">
+      Tasks die als <strong style="color:var(--accent2)">pausierbar</strong> markiert sind werden ausgegraut und zählen automatisch als erfüllt. Dein Streak läuft weiter.
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeUrlaubModal()">Abbrechen</button>
+      <button class="btn-primary" onclick="saveUrlaub()">Speichern</button>
+    </div>
+    <button class="btn-danger" id="urlaub-delete-btn" onclick="deleteUrlaub()" style="display:none">Urlaub beenden</button>
+  </div>
+</div>
+
+<!-- BUDGET MODAL -->
+<div class="modal-backdrop" id="budget-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Monatsbudget festlegen</div>
+    <div class="form-group">
+      <label class="form-label">Budget pro Monat</label>
+      <div class="budget-num-row">
+        <button onclick="changeBudget(-10)">−</button>
+        <div class="budget-num-display" id="budget-num-display">250 €</div>
+        <button onclick="changeBudget(10)">+</button>
+      </div>
+      <div style="font-size:12px;color:var(--text3);margin-top:8px;text-align:center">In 10 €-Schritten. Minimum 10 €.</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeBudgetModal()">Abbrechen</button>
+      <button class="btn-primary" onclick="saveBudget()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SK = {
+  cats:'de_cats', tasks:'de_tasks', log:'de_log', wakeup:'de_wakeup',
+  streak:'de_streak', bonuses:'de_bonuses', todos:'de_todos',
+  ausgaben:'de_ausgaben', budget:'de_budget', urlaub:'de_urlaub'
+};
+
+function load(key,def){try{const v=localStorage.getItem(key);return v?JSON.parse(v):def;}catch{return def;}}
+function save(key,val){localStorage.setItem(key,JSON.stringify(val));}
+
+function getToday(){
+  const now=new Date();
+  if(now.getHours()<3) now.setDate(now.getDate()-1);
+  return now.toISOString().slice(0,10);
+}
+function getCurrentWeekKey(){
+  const d=new Date(getToday()+'T12:00:00');
+  const day=d.getDay()===0?7:d.getDay();
+  const mon=new Date(d); mon.setDate(d.getDate()-(day-1));
+  return mon.toISOString().slice(0,10);
+}
+function getWeekDates(weekKey){
+  return Array.from({length:7},(_,i)=>{
+    const d=new Date(weekKey+'T12:00:00'); d.setDate(d.getDate()+i);
+    return d.toISOString().slice(0,10);
+  });
+}
+function getDayName(dateStr){return['So','Mo','Di','Mi','Do','Fr','Sa'][new Date(dateStr+'T12:00:00').getDay()];}
+function fmtNum(val){return val.toFixed(2).replace('.',',');}
+function formatEuro(val){return fmtNum(val)+' €';}
+function getMonthKey(date){return (date||getToday()).slice(0,7);}
+
+function showToast(msg,isGold){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.style.borderColor=isGold?'var(--amber)':'var(--green)';
+  t.style.color=isGold?'var(--amber)':'var(--green)';
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+// ── DATA ACCESSORS ─────────────────────────────────────
+function getCats(){return load(SK.cats,[]);}
+function getTasks(){return load(SK.tasks,[]);}
+function getLog(){return load(SK.log,[]);}
+function getStreak(){return load(SK.streak,{main:0,lastDay:'',taskStreaks:{},weeklyBonusLastWeek:'',milestonesClaimed:[]});}
+function getWakeup(){return load(SK.wakeup,{});}
+function getBonuses(){return load(SK.bonuses,[]);}
+function getTodos(){return load(SK.todos,[]);}
+function getAusgaben(){return load(SK.ausgaben,[]);}
+function getBudget(){return load(SK.budget,{limit:250});}
+function wakeupValues(){return{'5-6':2,'6-7':1,'7-8':0.5};}
+function getWakeupVerdient(wuEntry){
+  // Supports old string format (V1) and new object format {slot, verdient}
+  if(!wuEntry) return 0;
+  if(typeof wuEntry==='object') return wuEntry.verdient||0;
+  return wakeupValues()[wuEntry]||0; // V1 fallback
+}
+function getWakeupSlot(wuEntry){
+  if(!wuEntry) return null;
+  if(typeof wuEntry==='object') return wuEntry.slot||null;
+  return wuEntry; // V1 fallback
+}
+function getLogForDay(date){return getLog().filter(e=>e.datum===date);}
+
+// ── MIGRATION V1 → V2 ─────────────────────────────────
+function migrateData(){
+  const tasks=getTasks();
+  let changed=false;
+  tasks.forEach(t=>{
+    if(t.pausierbarImUrlaub===undefined){
+      t.pausierbarImUrlaub = t.typ==='xweek';
+      changed=true;
+    }
+  });
+  if(changed) save(SK.tasks,tasks);
+}
+
+// ── INIT ───────────────────────────────────────────────
+function initData(){
+  if(!localStorage.getItem(SK.cats)) save(SK.cats,[
+    {id:'cat1',name:'Körper',emoji:'💪'},
+    {id:'cat2',name:'Haushalt',emoji:'🏠'},
+    {id:'cat3',name:'Musik',emoji:'🎵'},
+    {id:'cat4',name:'Sonstiges',emoji:'🌱'},
+  ]);
+  if(!localStorage.getItem(SK.tasks)) save(SK.tasks,[
+    {id:'t1',name:'Bett machen',typ:'daily',catId:'cat2',wert:0.5,aktiv:true,pausierbarImUrlaub:false},
+    {id:'t2',name:'10 min dehnen',typ:'daily',catId:'cat1',wert:1.5,aktiv:true,pausierbarImUrlaub:false},
+    {id:'t3',name:'Bass üben',typ:'xweek',catId:'cat3',wert:1.5,frequenz:3,aktiv:true,pausierbarImUrlaub:true},
+    {id:'t4',name:'Wäsche waschen',typ:'optional',catId:'cat2',wert:1,aktiv:true,pausierbarImUrlaub:false},
+  ]);
+  if(!localStorage.getItem(SK.streak)) save(SK.streak,{main:0,lastDay:'',taskStreaks:{},weeklyBonusLastWeek:'',milestonesClaimed:[]});
+  if(!localStorage.getItem(SK.log)) save(SK.log,[]);
+  if(!localStorage.getItem(SK.wakeup)) save(SK.wakeup,{});
+  if(!localStorage.getItem(SK.bonuses)) save(SK.bonuses,[]);
+  if(!localStorage.getItem(SK.todos)) save(SK.todos,[]);
+  if(!localStorage.getItem(SK.ausgaben)) save(SK.ausgaben,[]);
+  if(!localStorage.getItem(SK.budget)) save(SK.budget,{limit:250});
+  if(!localStorage.getItem(SK.urlaub)) save(SK.urlaub,{aktiv:false,von:'',bis:''});
+  migrateData();
+}
+
+// ── BUDGET LOGIC ───────────────────────────────────────
+function getMonthEarned(monthKey){
+  const mk=monthKey||getMonthKey();
+  const log=getLog(); const wu=getWakeup(); const wuVals=wakeupValues(); const bonuses=getBonuses(); const todos=getTodos();
+  const taskE=log.filter(e=>e.datum.startsWith(mk)&&e.status==='done').reduce((s,e)=>s+(e.verdient||0),0);
+  const wuE=Object.entries(wu).filter(([d])=>d.startsWith(mk)).reduce((s,[,v])=>s+getWakeupVerdient(v),0);
+  const bonusE=bonuses.filter(b=>b.datum.startsWith(mk)).reduce((s,b)=>s+b.betrag,0);
+  const todoE=todos.filter(t=>t.erledigt&&t.erledigtAm&&t.erledigtAm.startsWith(mk)).reduce((s,t)=>s+(t.wert||0),0);
+  return taskE+wuE+bonusE+todoE;
+}
+function getBudgetLimit(){return getBudget().limit||250;}
+function isMonthBudgetReached(){return getMonthEarned()>=getBudgetLimit();}
+function getRemainingBudget(){return Math.max(0,getBudgetLimit()-getMonthEarned());}
+function applyBudgetCap(amount){
+  if(isMonthBudgetReached()) return 0;
+  const remaining=getRemainingBudget();
+  return Math.min(amount,remaining);
+}
+
+// ── EARNED CALCULATIONS ────────────────────────────────
+function getTodayEarned(){
+  const today=getToday(); const log=getLogForDay(today);
+  const wu=getWakeup(); const wuVals=wakeupValues();
+  const taskE=log.filter(e=>e.status==='done').reduce((s,e)=>s+(e.verdient||0),0);
+  const wuE=getWakeupVerdient(wu[today]);
+  const bonusE=getBonuses().filter(b=>b.datum===today).reduce((s,b)=>s+b.betrag,0);
+  const todoE=getTodos().filter(t=>t.erledigt&&t.erledigtAm===today).reduce((s,t)=>s+(t.wert||0),0);
+  return taskE+wuE+bonusE+todoE;
+}
+function getEarnedInPeriod(period){
+  const today=getToday(); const log=getLog(); const wu=getWakeup(); const wuVals=wakeupValues(); const bonuses=getBonuses(); const todos=getTodos();
+  let dates=[];
+  if(period==='week'){
+    dates=getWeekDates(getCurrentWeekKey());
+  } else {
+    const d=new Date(today); const year=d.getFullYear(); const month=d.getMonth();
+    const days=new Date(year,month+1,0).getDate();
+    dates=Array.from({length:days},(_,i)=>`${year}-${String(month+1).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`);
+  }
+  const taskE=log.filter(e=>dates.includes(e.datum)&&e.status==='done').reduce((s,e)=>s+(e.verdient||0),0);
+  const wuE=dates.reduce((s,date)=>s+getWakeupVerdient(wu[date]),0);
+  const bonusE=bonuses.filter(b=>dates.includes(b.datum)).reduce((s,b)=>s+b.betrag,0);
+  const todoE=todos.filter(t=>t.erledigt&&t.erledigtAm&&dates.includes(t.erledigtAm)).reduce((s,t)=>s+(t.wert||0),0);
+  return taskE+wuE+bonusE+todoE;
+}
+function getTotalEarned(){
+  const log=getLog(); const wu=getWakeup(); const wuVals=wakeupValues(); const bonuses=getBonuses(); const todos=getTodos();
+  const t=log.filter(e=>e.status==='done').reduce((s,e)=>s+(e.verdient||0),0);
+  const w=Object.values(wu).reduce((s,v)=>s+getWakeupVerdient(v),0);
+  const b=bonuses.reduce((s,b)=>s+b.betrag,0);
+  const td=todos.filter(t=>t.erledigt).reduce((s,t)=>s+(t.wert||0),0);
+  return t+w+b+td;
+}
+function getTotalSpent(){return getAusgaben().reduce((s,a)=>s+(a.betrag||0),0);}
+function getWalletBalance(){return getTotalEarned()-getTotalSpent();}
+function getXWeekProgressThisWeek(taskId){
+  const weekDates=getWeekDates(getCurrentWeekKey()); const log=getLog();
+  return log.filter(e=>e.taskId===taskId&&e.status==='done'&&weekDates.includes(e.datum)).length;
+}
+
+// ── STREAK LOGIC ───────────────────────────────────────
+function checkAndUpdateStreak(){
+  const today=getToday(); const streak=getStreak();
+  const tasks=getTasks().filter(t=>t.aktiv&&t.typ==='daily');
+  const todayLog=getLogForDay(today);
+  const allDone=tasks.length>0&&tasks.every(t=>isDailyFulfilledOnDate(t,today,getLog()));
+
+  if(streak.lastDay&&streak.lastDay!==today){
+    const last=new Date(streak.lastDay+'T12:00:00');
+    const now=new Date(today+'T12:00:00');
+    const diff=(now-last)/86400000;
+    if(diff>1) streak.main=0;
+  }
+  if(allDone&&streak.lastDay!==today){
+    streak.main=(streak.main||0)+1;
+    streak.lastDay=today;
+  }
+  save(SK.streak,streak);
+  checkWeeklyBonus(streak);
+  checkMilestones(streak);
+}
+
+function checkWeeklyBonus(streak){
+  const today=getToday();
+  const d=new Date(today+'T12:00:00');
+  if(d.getDay()!==0) return;
+  const mon=new Date(d); mon.setDate(d.getDate()-6);
+  const thisWeekKey=mon.toISOString().slice(0,10);
+  if(streak.weeklyBonusLastWeek===thisWeekKey) return;
+  const weekDates=getWeekDates(thisWeekKey);
+  const tasks=getTasks().filter(t=>t.aktiv&&t.typ==='daily');
+  const log=getLog();
+  const allWeekDone=tasks.length>0&&weekDates.every(date=>
+    tasks.every(t=>isDailyFulfilledOnDate(t,date,log))
+  );
+  if(allWeekDone){
+    const amt=applyBudgetCap(15);
+    const bonuses=getBonuses();
+    bonuses.push({id:'b'+Date.now(),typ:'weekly',datum:today,betrag:amt,label:'Wochen-Bonus ⭐'});
+    save(SK.bonuses,bonuses);
+    streak.weeklyBonusLastWeek=thisWeekKey;
+    save(SK.streak,streak);
+    if(amt>0) showToast('⭐ Wochen-Bonus! +'+formatEuro(amt),true);
+    else showToast('⭐ Wochen-Bonus erreicht (Budget-Limit)',true);
+  }
+}
+
+const MILESTONES=[
+  {weeks:5,days:35,betrag:50,label:'Meilenstein: 5 Wochen 🏅',key:'w5'},
+  {weeks:10,days:70,betrag:100,label:'Meilenstein: 10 Wochen 🏆',key:'w10'},
+  {weeks:26,days:180,betrag:200,label:'Meilenstein: 6 Monate 💎',key:'w26'},
+];
+
+function checkMilestones(streak){
+  const mainDays=streak.main||0;
+  const claimed=streak.milestonesClaimed||[];
+  MILESTONES.forEach(m=>{
+    if(mainDays>=m.days&&!claimed.includes(m.key)){
+      const amt=applyBudgetCap(m.betrag);
+      const bonuses=getBonuses();
+      bonuses.push({id:'b'+Date.now(),typ:'milestone',datum:getToday(),betrag:amt,label:m.label});
+      save(SK.bonuses,bonuses);
+      streak.milestonesClaimed=[...(streak.milestonesClaimed||[]),m.key];
+      save(SK.streak,streak);
+      showToast('🏆 '+m.label+(amt>0?' +'+formatEuro(amt):''),true);
+    }
+  });
+}
+
+// ── TODAY SCREEN ───────────────────────────────────────
+function renderToday(){
+  checkAndUpdateStreak();
+  const today=getToday();
+  const d=new Date(today+'T12:00:00');
+  const days=['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+  const months=['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+  document.getElementById('today-date').textContent=`${days[d.getDay()]}, ${d.getDate()}. ${months[d.getMonth()]}`;
+  document.getElementById('today-amount').textContent=fmtNum(getTodayEarned());
+  document.getElementById('main-streak-val').textContent=getStreak().main||0;
+  document.getElementById('week-amount').textContent=fmtNum(getEarnedInPeriod('week'));
+  document.getElementById('total-amount').textContent=fmtNum(getTotalEarned());
+
+  // Wallet pill
+  const balance=getWalletBalance();
+  const wp=document.getElementById('wallet-pill');
+  document.getElementById('wallet-pill-val').textContent=formatEuro(balance);
+  wp.classList.toggle('negative',balance<0);
+
+  // Budget bar
+  const limit=getBudgetLimit(); const monthEarned=getMonthEarned();
+  const pct=Math.min(100,(monthEarned/limit)*100);
+  const fill=document.getElementById('budget-bar-fill');
+  fill.style.width=pct+'%';
+  fill.className='budget-bar-fill'+(pct>=100?' full':pct>=80?' warn':'');
+  const bbt=document.getElementById('budget-bar-text');
+  if(bbt) bbt.textContent=fmtNum(monthEarned)+' / '+fmtNum(limit)+' €';
+
+  // Bonus banner
+  const bonusContainer=document.getElementById('bonus-container');
+  const todayBonuses=getBonuses().filter(b=>b.datum===today);
+  if(todayBonuses.length){
+    const total=todayBonuses.reduce((s,b)=>s+b.betrag,0);
+    const labels=todayBonuses.map(b=>b.label).join(', ');
+    bonusContainer.innerHTML=`<div class="bonus-banner"><div class="bonus-banner-icon">🎉</div><div><div class="bonus-banner-title">${labels}</div><div class="bonus-banner-sub">+${formatEuro(total)} wurden heute gutgeschrieben</div></div></div>`;
+  } else { bonusContainer.innerHTML=''; }
+
+  // Budget limit banner
+  const blc=document.getElementById('budget-limit-container');
+  if(isMonthBudgetReached()){
+    blc.innerHTML=`<div class="budget-limit-reached"><div class="budget-limit-reached-icon">🏆</div><div><div class="budget-limit-reached-title">Budget-Limit erreicht!</div><div class="budget-limit-reached-sub">Dein Streak läuft weiter. Neues Budget ab ${getNextMonthLabel()}.</div></div></div>`;
+  } else { blc.innerHTML=''; }
+
+  // Urlaubs-Banner
+  renderUrlaubBanner();
+
+  // Wakeup
+  const wu=getWakeup(); const selected=wu[today]||null;
+  ['5-6','6-7','7-8'].forEach(k=>document.getElementById('wk-'+k).classList.toggle('selected',getWakeupSlot(selected)===k));
+
+  // Tasks
+  const cats=getCats(); const tasks=getTasks().filter(t=>t.aktiv);
+  const container=document.getElementById('tasks-container'); container.innerHTML='';
+  const todayLog=getLogForDay(today);
+  const typeOrder={daily:0,xweek:1,optional:2};
+  const catMap={};
+  tasks.forEach(t=>{const cid=t.catId||'none';if(!catMap[cid])catMap[cid]=[];catMap[cid].push(t);});
+
+  cats.forEach(cat=>{
+    const catTasks=(catMap[cat.id]||[]).sort((a,b)=>typeOrder[a.typ]-typeOrder[b.typ]);
+    if(!catTasks.length) return;
+    const group=document.createElement('div'); group.className='cat-group';
+    group.innerHTML=`<div class="cat-header"><span class="cat-emoji">${cat.emoji}</span><span class="cat-name">${cat.name}</span></div>`;
+    catTasks.forEach(task=>{
+      const done=todayLog.some(e=>e.taskId===task.id&&e.status==='done');
+      const paused=isTaskPausedToday(task);
+      const card=document.createElement('div'); card.className='task-card'+(done?' done':'')+(paused?' paused':'');
+      if(!paused) card.onclick=()=>toggleTask(task.id);
+      let badge='',meta='';
+      if(paused){ badge=`<span class="paused-badge">🏖️ Pause</span>`; }
+      else if(task.typ==='xweek'){
+        const prog=getXWeekProgressThisWeek(task.id);
+        const ws=(getStreak().taskStreaks||{})[task.id]||0;
+        badge=`<span class="type-badge badge-xweek">${prog}/${task.frequenz}×</span>`;
+        meta=`${prog} von ${task.frequenz}× diese Woche · 🎯 ${ws} Wochen`;
+      } else if(task.typ==='optional'){
+        badge=`<span class="type-badge badge-optional">Optional</span>`;
+      }
+      const budgetReached=isMonthBudgetReached();
+      card.innerHTML=`
+        <div class="task-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+        <div class="task-info">
+          <div class="task-name">${badge}${task.name}</div>
+          ${meta?`<div class="task-meta">${meta}</div>`:''}
+        </div>
+        <div class="task-value">${done?'':budgetReached?'🏆':'+'}${done||budgetReached?fmtNum(task.wert)+' €':fmtNum(task.wert)+' €'}</div>`;
+      group.appendChild(card);
+    });
+    container.appendChild(group);
+  });
+
+  const uncatTasks=(catMap['none']||[]).sort((a,b)=>typeOrder[a.typ]-typeOrder[b.typ]);
+  if(uncatTasks.length){
+    const group=document.createElement('div'); group.className='cat-group';
+    group.innerHTML=`<div class="cat-header"><span class="cat-emoji">📋</span><span class="cat-name">Sonstige</span></div>`;
+    uncatTasks.forEach(task=>{
+      const done=todayLog.some(e=>e.taskId===task.id&&e.status==='done');
+      const paused=isTaskPausedToday(task);
+      const card=document.createElement('div'); card.className='task-card'+(done?' done':'')+(paused?' paused':'');
+      if(!paused) card.onclick=()=>toggleTask(task.id);
+      card.innerHTML=`
+        <div class="task-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+        <div class="task-info"><div class="task-name">${task.name}</div></div>
+        <div class="task-value">${fmtNum(task.wert)} €</div>`;
+      group.appendChild(card);
+    });
+    container.appendChild(group);
+  }
+
+  if(!tasks.length) container.innerHTML=`<div class="empty-state"><div class="empty-icon">✨</div>Keine Aufgaben. Füge welche in den Einstellungen hinzu!</div>`;
+
+  // Sync budget display in settings
+  const bd=document.getElementById('budget-display');
+  if(bd) bd.textContent=fmtNum(getBudgetLimit())+' €';
+}
+
+function getNextMonthLabel(){
+  const d=new Date(); d.setMonth(d.getMonth()+1); d.setDate(1);
+  return d.toLocaleDateString('de-DE',{day:'numeric',month:'long'});
+}
+
+function toggleTask(taskId){
+  const today=getToday(); const log=getLog();
+  const existing=log.findIndex(e=>e.taskId===taskId&&e.datum===today);
+  if(existing>=0){ log.splice(existing,1); }
+  else {
+    const task=getTasks().find(t=>t.id===taskId);
+    const rawVal=task?task.wert:0;
+    const val=applyBudgetCap(rawVal);
+    log.push({taskId,datum:today,status:'done',verdient:val});
+  }
+  save(SK.log,log);
+  checkAndUpdateStreak();
+  renderToday();
+}
+
+function setWakeup(slot){
+  const today=getToday(); const wu=getWakeup();
+  const current=wu[today];
+  if(current&&(current===slot||(current.slot&&current.slot===slot))){
+    wu[today]=null;
+  } else {
+    const rawVal=wakeupValues()[slot]||0;
+    // Budget-Cap: Monatsbetrag ohne heutigen Wakeup berechnen
+    const mk=getMonthKey();
+    const log=getLog(); const bonuses=getBonuses(); const todos=getTodos();
+    const taskE=log.filter(e=>e.datum.startsWith(mk)&&e.status==='done').reduce((s,e)=>s+(e.verdient||0),0);
+    const wuWithout={...wu}; wuWithout[today]=null;
+    const wuE=Object.values(wuWithout).filter(Boolean).filter(v=>typeof v==='object'&&v.slot).reduce((s,v)=>s+(v.verdient||0),0);
+    const bonusE=bonuses.filter(b=>b.datum.startsWith(mk)).reduce((s,b)=>s+b.betrag,0);
+    const todoE=todos.filter(t=>t.erledigt&&t.erledigtAm&&t.erledigtAm.startsWith(mk)).reduce((s,t)=>s+(t.wert||0),0);
+    const alreadyEarned=taskE+wuE+bonusE+todoE;
+    const remaining=Math.max(0,getBudgetLimit()-alreadyEarned);
+    const verdient=Math.min(rawVal,remaining);
+    wu[today]={slot,verdient};
+  }
+  save(SK.wakeup,wu); renderToday();
+}
+
+// ── TODOS SCREEN ───────────────────────────────────────
+let showingArchive=false;
+let currentTodoId=null;
+let editingTodoId=null;
+let currentPrio='mittel';
+let editSubtasks=[];
+
+function toggleArchive(){
+  showingArchive=!showingArchive;
+  document.getElementById('todos-active-view').style.display=showingArchive?'none':'block';
+  document.getElementById('todos-archive-view').style.display=showingArchive?'block':'none';
+  document.querySelector('.archive-btn').textContent=showingArchive?'← Zurück':'📦 Archiv';
+  if(showingArchive) renderArchive();
+}
+
+function renderTodos(){
+  const todos=getTodos().filter(t=>!t.erledigt);
+  const container=document.getElementById('todos-container');
+  container.innerHTML='';
+  if(!todos.length){
+    container.innerHTML=`<div class="empty-state"><div class="empty-icon">✅</div>Keine offenen Todos. Super!</div>`;
+    return;
+  }
+  const prios=[{key:'hoch',label:'Hoch',color:'#ff7e6b'},{key:'mittel',label:'Mittel',color:'#f7c948'},{key:'niedrig',label:'Niedrig',color:'#4ecca3'}];
+  prios.forEach(p=>{
+    const group=todos.filter(t=>(t.prioritaet||'mittel')===p.key);
+    if(!group.length) return;
+    const cats=getCats();
+    const div=document.createElement('div'); div.className='priority-group';
+    div.innerHTML=`<div class="priority-label"><div class="prio-dot ${p.key}"></div><span class="section-label" style="margin-bottom:0">${p.label}</span></div>`;
+    group.forEach(todo=>{
+      const cat=cats.find(c=>c.id===todo.catId);
+      const doneCount=(todo.subtasks||[]).filter(s=>s.done).length;
+      const totalSubs=(todo.subtasks||[]).length;
+      const card=document.createElement('div'); card.className='todo-card';
+      card.onclick=()=>openTodoDetail(todo.id);
+      card.innerHTML=`
+        <div class="todo-card-top">
+          <div class="todo-prio-badge" style="background:${p.color}"></div>
+          <div class="todo-title">${todo.titel}</div>
+          <div class="todo-value">+${fmtNum(todo.wert||0)} €</div>
+        </div>
+        ${cat?`<div class="todo-meta">${cat.emoji} ${cat.name}</div>`:''}
+        ${totalSubs>0?`<div class="todo-subtask-preview">${doneCount}/${totalSubs} Subtasks</div>`:''}
+      `;
+      div.appendChild(card);
+    });
+    container.appendChild(div);
+  });
+}
+
+function renderArchive(){
+  const todos=getTodos().filter(t=>t.erledigt).sort((a,b)=>(b.erledigtAm||'').localeCompare(a.erledigtAm||''));
+  const container=document.getElementById('todos-archive-container');
+  if(!todos.length){container.innerHTML=`<div class="empty-state"><div class="empty-icon">📦</div>Noch keine erledigten Todos.</div>`;return;}
+  container.innerHTML=todos.map(t=>{
+    const d=t.erledigtAm?new Date(t.erledigtAm+'T12:00:00').toLocaleDateString('de-DE'):'';
+    return `<div class="archive-item">
+      <div class="archive-item-name">${t.titel}</div>
+      <div class="archive-item-right">
+        <div class="archive-item-val">+${fmtNum(t.wert||0)} €</div>
+        <div class="archive-item-date">${d}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// TODO DETAIL
+function openTodoDetail(todoId){
+  currentTodoId=todoId;
+  const todo=getTodos().find(t=>t.id===todoId);
+  if(!todo) return;
+  const cat=getCats().find(c=>c.id===todo.catId);
+  document.getElementById('detail-title').textContent=todo.titel;
+  document.getElementById('detail-cat-badge').textContent=(cat?cat.emoji+' '+cat.name+' · ':'')+({hoch:'🔴 Hoch',mittel:'🟡 Mittel',niedrig:'🟢 Niedrig'}[todo.prioritaet||'mittel']);
+  document.getElementById('detail-desc').textContent=todo.beschreibung||'';
+  document.getElementById('detail-desc').style.display=todo.beschreibung?'block':'none';
+  document.getElementById('detail-wert').textContent='+'+fmtNum(todo.wert||0)+' €';
+  renderDetailSubtasks(todo);
+  document.getElementById('todo-detail-modal').classList.add('open');
+}
+
+function renderDetailSubtasks(todo){
+  const container=document.getElementById('detail-subtasks');
+  if(!(todo.subtasks||[]).length){container.innerHTML='';return;}
+  container.innerHTML='<div class="subtask-list">'+
+    todo.subtasks.map((s,i)=>`
+      <div class="subtask-item ${s.done?'done':''}" onclick="toggleSubtask('${todo.id}',${i})">
+        <div class="subtask-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+        <div class="subtask-text">${s.text}</div>
+      </div>`).join('')+'</div>';
+}
+
+function toggleSubtask(todoId,idx){
+  const todos=getTodos();
+  const todo=todos.find(t=>t.id===todoId);
+  if(!todo||!todo.subtasks) return;
+  todo.subtasks[idx].done=!todo.subtasks[idx].done;
+  save(SK.todos,todos);
+  renderDetailSubtasks(todo);
+}
+
+function completeTodo(){
+  const todos=getTodos();
+  const todo=todos.find(t=>t.id===currentTodoId);
+  if(!todo) return;
+  const amt=applyBudgetCap(todo.wert||0);
+  todo.erledigt=true;
+  todo.erledigtAm=getToday();
+  todo.verdient=amt;
+  save(SK.todos,todos);
+  closeTodoDetail();
+  renderTodos();
+  renderToday();
+  showToast('✅ Todo erledigt! +'+formatEuro(amt));
+}
+
+function closeTodoDetail(){document.getElementById('todo-detail-modal').classList.remove('open');currentTodoId=null;}
+
+function openTodoModalFromDetail(){
+  const id=currentTodoId;
+  closeTodoDetail();
+  setTimeout(()=>openTodoModal(id),150);
+}
+
+// TODO MODAL
+function openTodoModal(todoId){
+  editingTodoId=todoId||null; currentPrio='mittel'; editSubtasks=[];
+  const cats=getCats();
+  document.getElementById('todo-modal-title').textContent=todoId?'Todo bearbeiten':'Neues Todo';
+  document.getElementById('todo-cat-select').innerHTML=cats.map(c=>`<option value="${c.id}">${c.emoji} ${c.name}</option>`).join('');
+  document.getElementById('todo-delete-btn').style.display=todoId?'block':'none';
+
+  if(todoId){
+    const todo=getTodos().find(t=>t.id===todoId);
+    if(todo){
+      document.getElementById('todo-title-input').value=todo.titel||'';
+      document.getElementById('todo-desc-input').value=todo.beschreibung||'';
+      document.getElementById('todo-value-input').value=todo.wert||'';
+      document.getElementById('todo-cat-select').value=todo.catId||'';
+      currentPrio=todo.prioritaet||'mittel';
+      editSubtasks=(todo.subtasks||[]).map(s=>({...s}));
+    }
+  } else {
+    document.getElementById('todo-title-input').value='';
+    document.getElementById('todo-desc-input').value='';
+    document.getElementById('todo-value-input').value='';
+    editSubtasks=[];
+  }
+  updatePrioButtons();
+  renderSubtaskEdit();
+  document.getElementById('todo-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('todo-title-input').focus(),100);
+}
+
+function closeTodoModal(){document.getElementById('todo-modal').classList.remove('open');}
+
+function selectPrio(prio,btn){
+  currentPrio=prio;
+  updatePrioButtons();
+}
+
+function updatePrioButtons(){
+  document.querySelectorAll('#todo-modal .prio-seg-btn').forEach(b=>b.className='prio-seg-btn');
+  const btns=document.querySelectorAll('#todo-modal .prio-seg-btn');
+  const idx={hoch:0,mittel:1,niedrig:2}[currentPrio];
+  if(btns[idx]) btns[idx].className='prio-seg-btn active-'+currentPrio;
+}
+
+function addSubtask(){
+  const inp=document.getElementById('subtask-input');
+  const text=inp.value.trim(); if(!text) return;
+  editSubtasks.push({id:'s'+Date.now(),text,done:false});
+  inp.value=''; renderSubtaskEdit(); inp.focus();
+}
+
+function removeSubtaskEdit(idx){
+  editSubtasks.splice(idx,1); renderSubtaskEdit();
+}
+
+function renderSubtaskEdit(){
+  document.getElementById('subtask-list-edit').innerHTML=editSubtasks.map((s,i)=>
+    `<div class="subtask-tag"><span class="subtask-tag-text">${s.text}</span><button class="subtask-tag-del" onclick="removeSubtaskEdit(${i})">×</button></div>`
+  ).join('');
+}
+
+function saveTodo(){
+  const titel=document.getElementById('todo-title-input').value.trim();
+  if(!titel){document.getElementById('todo-title-input').focus();return;}
+  const beschreibung=document.getElementById('todo-desc-input').value.trim();
+  const wert=parseFloat(document.getElementById('todo-value-input').value)||0;
+  const catId=document.getElementById('todo-cat-select').value;
+  const todos=getTodos();
+  if(editingTodoId){
+    const idx=todos.findIndex(t=>t.id===editingTodoId);
+    if(idx>=0) todos[idx]={...todos[idx],titel,beschreibung,wert,catId,prioritaet:currentPrio,subtasks:editSubtasks};
+  } else {
+    todos.push({id:'td'+Date.now(),titel,beschreibung,wert,catId,prioritaet:currentPrio,subtasks:editSubtasks,erledigt:false,erledigtAm:null,erstellt:getToday()});
+  }
+  save(SK.todos,todos); closeTodoModal(); renderTodos(); renderToday();
+}
+
+function deleteTodo(){
+  if(!editingTodoId||!confirm('Todo wirklich löschen?')) return;
+  save(SK.todos,getTodos().filter(t=>t.id!==editingTodoId));
+  closeTodoModal(); renderTodos();
+}
+
+// ── WALLET SCREEN ──────────────────────────────────────
+function renderWallet(){
+  const balance=getWalletBalance(); const earned=getTotalEarned(); const spent=getTotalSpent();
+  const balEl=document.getElementById('wallet-balance');
+  balEl.textContent=formatEuro(balance);
+  balEl.className='wallet-balance'+(balance<0?' negative':'');
+  document.getElementById('wallet-total-earned').textContent=formatEuro(earned);
+  document.getElementById('wallet-total-spent').textContent=formatEuro(spent);
+
+  const wc=document.getElementById('wallet-warning-container');
+  wc.innerHTML=balance<0?`<div class="wallet-warning">⚠️ Dein Guthaben ist negativ. Du hast mehr ausgegeben als verdient.</div>`:'';
+
+  const ausgaben=getAusgaben().slice().sort((a,b)=>b.datum.localeCompare(a.datum));
+  const list=document.getElementById('ausgaben-list');
+  if(!ausgaben.length){list.innerHTML=`<div class="empty-state"><div class="empty-icon">💸</div>Noch keine Ausgaben eingetragen.</div>`;return;}
+  list.innerHTML=ausgaben.map(a=>{
+    const d=new Date(a.datum+'T12:00:00').toLocaleDateString('de-DE');
+    return `<div class="ausgabe-row">
+      <div class="ausgabe-left">
+        <div class="ausgabe-title">${a.titel}</div>
+        <div class="ausgabe-date">${d}</div>
+        ${a.notiz?`<div class="ausgabe-notiz">${a.notiz}</div>`:''}
+      </div>
+      <div class="ausgabe-betrag">−${formatEuro(a.betrag)}</div>
+      <button class="ausgabe-del" onclick="deleteAusgabe('${a.id}')" title="Löschen">×</button>
+    </div>`;
+  }).join('');
+}
+
+let tempBudgetVal=250;
+function openBudgetModal(){
+  tempBudgetVal=getBudgetLimit();
+  document.getElementById('budget-num-display').textContent=fmtNum(tempBudgetVal)+' €';
+  document.getElementById('budget-modal').classList.add('open');
+}
+function closeBudgetModal(){document.getElementById('budget-modal').classList.remove('open');}
+function changeBudget(delta){
+  tempBudgetVal=Math.max(10,tempBudgetVal+delta);
+  document.getElementById('budget-num-display').textContent=fmtNum(tempBudgetVal)+' €';
+}
+function saveBudget(){
+  save(SK.budget,{limit:tempBudgetVal});
+  closeBudgetModal();
+  document.getElementById('budget-display').textContent=fmtNum(tempBudgetVal)+' €';
+  renderToday();
+  showToast('✅ Budget gespeichert');
+}
+
+function openAusgabeModal(){
+  document.getElementById('ausgabe-title-input').value='';
+  document.getElementById('ausgabe-betrag-input').value='';
+  document.getElementById('ausgabe-datum-input').value=getToday();
+  document.getElementById('ausgabe-notiz-input').value='';
+  document.getElementById('ausgabe-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('ausgabe-title-input').focus(),100);
+}
+function closeAusgabeModal(){document.getElementById('ausgabe-modal').classList.remove('open');}
+function saveAusgabe(){
+  const titel=document.getElementById('ausgabe-title-input').value.trim();
+  const betrag=parseFloat(document.getElementById('ausgabe-betrag-input').value)||0;
+  const datum=document.getElementById('ausgabe-datum-input').value||getToday();
+  const notiz=document.getElementById('ausgabe-notiz-input').value.trim();
+  if(!titel){document.getElementById('ausgabe-title-input').focus();return;}
+  if(betrag<=0){document.getElementById('ausgabe-betrag-input').focus();return;}
+  const ausgaben=getAusgaben();
+  ausgaben.push({id:'a'+Date.now(),titel,betrag,datum,notiz});
+  save(SK.ausgaben,ausgaben);
+  closeAusgabeModal(); renderWallet(); renderToday();
+  showToast('💸 Ausgabe gespeichert');
+}
+function deleteAusgabe(id){
+  if(!confirm('Ausgabe löschen?')) return;
+  save(SK.ausgaben,getAusgaben().filter(a=>a.id!==id));
+  renderWallet(); renderToday();
+}
+
+
+// ── URLAUBS-MODUS ──────────────────────────────────────
+function getUrlaub(){return load(SK.urlaub,{aktiv:false,von:'',bis:''});}
+
+function isUrlaubActive(dateStr){
+  const u=getUrlaub(); if(!u.aktiv||!u.von||!u.bis) return false;
+  const d=dateStr||getToday();
+  return d>=u.von && d<=u.bis;
+}
+
+function isUrlaubActiveInWeek(weekDates){
+  return weekDates.some(d=>isUrlaubActive(d));
+}
+
+function isTaskPausedToday(task){
+  return isUrlaubActive(getToday()) && task.pausierbarImUrlaub===true;
+}
+
+// Für Streak & Wochen-Bonus: gilt ein Daily-Task an einem Datum als erfüllt?
+function isDailyFulfilledOnDate(task, date, log){
+  // Tatsächlich erledigt?
+  if(log.some(e=>e.taskId===task.id&&e.datum===date&&e.status==='done')) return true;
+  // Im Urlaub pausierbar → gilt als erfüllt
+  if(isUrlaubActive(date) && task.pausierbarImUrlaub===true) return true;
+  return false;
+}
+
+function renderUrlaubBanner(){
+  const container=document.getElementById('urlaub-banner-container');
+  if(!container) return;
+  if(!isUrlaubActive(getToday())){container.innerHTML='';return;}
+  const u=getUrlaub();
+  const bis=new Date(u.bis+'T12:00:00').toLocaleDateString('de-DE',{day:'numeric',month:'long'});
+  container.innerHTML=`<div class="urlaub-banner"><div class="urlaub-banner-icon">🏖️</div><div><div class="urlaub-banner-title">Urlaubs-Modus aktiv</div><div class="urlaub-banner-sub">Pausierbare Tasks ruhen bis ${bis}</div></div></div>`;
+}
+
+function renderUrlaubSetting(){
+  const u=getUrlaub();
+  const nameEl=document.getElementById('urlaub-setting-name');
+  const subEl=document.getElementById('urlaub-setting-sub');
+  if(!nameEl||!subEl) return;
+  if(u.aktiv&&u.von&&u.bis){
+    const von=new Date(u.von+'T12:00:00').toLocaleDateString('de-DE',{day:'numeric',month:'short'});
+    const bis=new Date(u.bis+'T12:00:00').toLocaleDateString('de-DE',{day:'numeric',month:'short'});
+    nameEl.textContent='🏖️ Urlaub: '+von+' – '+bis;
+    subEl.textContent=isUrlaubActive(getToday())?'Aktuell aktiv':'Geplant';
+  } else {
+    nameEl.textContent='Kein Urlaub aktiv';
+    subEl.textContent='Tippen um Urlaub einzustellen';
+  }
+}
+
+function openUrlaubModal(){
+  const u=getUrlaub();
+  document.getElementById('urlaub-von-input').value=u.von||getToday();
+  document.getElementById('urlaub-bis-input').value=u.bis||getToday();
+  const delBtn=document.getElementById('urlaub-delete-btn');
+  delBtn.style.display=u.aktiv?'block':'none';
+  const info=document.getElementById('urlaub-aktiv-info');
+  if(u.aktiv&&u.von&&u.bis){
+    info.style.display='block';
+    const von=new Date(u.von+'T12:00:00').toLocaleDateString('de-DE');
+    const bis=new Date(u.bis+'T12:00:00').toLocaleDateString('de-DE');
+    info.textContent='Aktuell eingestellt: '+von+' – '+bis;
+  } else {info.style.display='none';}
+  document.getElementById('urlaub-modal').classList.add('open');
+}
+
+function closeUrlaubModal(){document.getElementById('urlaub-modal').classList.remove('open');}
+
+function saveUrlaub(){
+  const von=document.getElementById('urlaub-von-input').value;
+  const bis=document.getElementById('urlaub-bis-input').value;
+  if(!von||!bis){return;}
+  if(bis<von){alert('Das Enddatum muss nach dem Startdatum liegen.');return;}
+  save(SK.urlaub,{aktiv:true,von,bis});
+  closeUrlaubModal();
+  renderUrlaubSetting();
+  renderToday();
+  showToast('🏖️ Urlaubs-Modus gespeichert');
+}
+
+function deleteUrlaub(){
+  if(!confirm('Urlaubs-Modus deaktivieren?')) return;
+  save(SK.urlaub,{aktiv:false,von:'',bis:''});
+  closeUrlaubModal();
+  renderUrlaubSetting();
+  renderToday();
+  showToast('✅ Urlaubs-Modus beendet');
+}
+
+// ── INFO SCREEN ────────────────────────────────────────
+function openInfoScreen(){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('screen-info').classList.add('active');
+}
+function closeInfoScreen(){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('screen-settings').classList.add('active');
+  document.querySelectorAll('.nav-btn')[4].classList.add('active');
+  renderSettings();
+}
+function toggleInfo(header){
+  const chevron=header.querySelector('.info-card-chevron');
+  const body=header.nextElementSibling;
+  chevron.classList.toggle('open');
+  body.classList.toggle('open');
+}
+
+// ── KALENDER ───────────────────────────────────────────
+let calYear=new Date().getFullYear();
+let calMonth=new Date().getMonth();
+let calSelectedDay=null;
+
+function renderCalendar(){
+  const container=document.getElementById('cal-container');
+  if(!container) return;
+  const today=getToday();
+  const log=getLog();
+  const dailyTasks=getTasks().filter(t=>t.aktiv&&t.typ==='daily');
+  const months=['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+  const firstDay=new Date(calYear,calMonth,1).getDay();
+  const startOffset=firstDay===0?6:firstDay-1; // Mo=0
+  const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
+  const dayNames=['Mo','Di','Mi','Do','Fr','Sa','So'];
+
+  let html=`<div class="cal-nav">
+    <button class="cal-nav-btn" onclick="calPrev()">‹</button>
+    <div class="cal-nav-title">${months[calMonth]} ${calYear}</div>
+    <button class="cal-nav-btn" onclick="calNext()">›</button>
+  </div>
+  <div class="cal-grid">`;
+
+  dayNames.forEach(d=>{ html+=`<div class="cal-day-header">${d}</div>`; });
+
+  // Empty cells before first day
+  for(let i=0;i<startOffset;i++) html+=`<div class="cal-day empty"></div>`;
+
+  for(let day=1;day<=daysInMonth;day++){
+    const dateStr=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const isFuture=dateStr>today;
+    const isToday=dateStr===today;
+    const isSelected=dateStr===calSelectedDay;
+
+    let cls='cal-day';
+    if(isFuture) cls+=' future';
+    else if(dailyTasks.length===0) cls+=' has-data';
+    else {
+      const allDone=dailyTasks.every(t=>isDailyFulfilledOnDate(t,dateStr,log));
+      const anyDone=dailyTasks.some(t=>isDailyFulfilledOnDate(t,dateStr,log));
+      if(allDone) cls+=' done';
+      else if(anyDone) cls+=' partial has-data';
+      else cls+=' has-data';
+    }
+    if(isToday) cls+=' today';
+    const clickHandler=isFuture?'':`onclick="selectCalDay('${dateStr}')"`;
+    const selectedStyle=isSelected?'outline:2px solid var(--accent2);outline-offset:-2px;':'';
+    html+=`<div class="${cls}" style="${selectedStyle}" ${clickHandler}>${day}</div>`;
+  }
+  html+='</div>';
+
+  // Day detail
+  if(calSelectedDay){
+    const wu=getWakeup(); const wuVals=wakeupValues();
+    const dayLog=log.filter(e=>e.datum===calSelectedDay&&e.status==='done');
+    const taskE=dayLog.reduce((s,e)=>s+(e.verdient||0),0);
+    const wuE=getWakeupVerdient(wu[calSelectedDay]);
+    const bonusE=getBonuses().filter(b=>b.datum===calSelectedDay).reduce((s,b)=>s+b.betrag,0);
+    const todoE=getTodos().filter(t=>t.erledigt&&t.erledigtAm===calSelectedDay).reduce((s,t)=>s+(t.wert||0),0);
+    const total=taskE+wuE+bonusE+todoE;
+    const d=new Date(calSelectedDay+'T12:00:00');
+    const dayNames2=['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+    const months2=['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+    const doneTasks=dailyTasks.filter(t=>isDailyFulfilledOnDate(t,calSelectedDay,log));
+    const wuSlot=getWakeupSlot(wu[calSelectedDay]);
+    html+=`<div class="cal-day-detail">
+      <div class="cal-day-detail-date">${dayNames2[d.getDay()]}, ${d.getDate()}. ${months2[d.getMonth()]}</div>
+      ${total>0?`<div class="cal-day-detail-row"><span>Verdient</span><span class="cal-day-detail-val">+${formatEuro(total)}</span></div>`:''}
+      ${wuSlot?`<div class="cal-day-detail-row"><span>Aufstehzeit (${wuSlot} Uhr)</span><span class="cal-day-detail-val">+${formatEuro(wuE)}</span></div>`:''}
+      ${doneTasks.length>0?`<div class="cal-day-detail-row"><span>Daily-Tasks erledigt</span><span class="cal-day-detail-val">${doneTasks.length}/${dailyTasks.length}</span></div>`:''}
+      ${isUrlaubActive(calSelectedDay)?`<div class="cal-day-detail-row"><span>Status</span><span style="color:var(--green)">🏖️ Urlaub</span></div>`:''}
+      ${total===0&&!isUrlaubActive(calSelectedDay)?`<div style="font-size:13px;color:var(--text3);text-align:center;padding:4px 0">Keine Aktivität</div>`:''}
+    </div>`;
+  }
+
+  container.innerHTML=html;
+}
+
+function selectCalDay(dateStr){
+  calSelectedDay=calSelectedDay===dateStr?null:dateStr;
+  renderCalendar();
+}
+function calPrev(){
+  calMonth--; if(calMonth<0){calMonth=11;calYear--;} calSelectedDay=null; renderCalendar();
+}
+function calNext(){
+  const now=new Date(); if(calYear>now.getFullYear()||(calYear===now.getFullYear()&&calMonth>=now.getMonth())) return;
+  calMonth++; if(calMonth>11){calMonth=0;calYear++;} calSelectedDay=null; renderCalendar();
+}
+
+// ── STATS SCREEN ───────────────────────────────────────
+let statTab='week';
+function setStatTab(tab,btn){
+  statTab=tab;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const calContainer=document.getElementById('cal-container');
+  const weekBar=document.getElementById('week-bar');
+  const statsGrid=document.querySelector('.stats-grid');
+  if(tab==='cal'){
+    if(calContainer) calContainer.style.display='block';
+    if(weekBar) weekBar.style.display='none';
+    if(statsGrid) statsGrid.style.display='none';
+    calYear=new Date().getFullYear(); calMonth=new Date().getMonth(); calSelectedDay=null;
+    renderCalendar();
+  } else {
+    if(calContainer) calContainer.style.display='none';
+    if(weekBar) weekBar.style.display='block';
+    if(statsGrid) statsGrid.style.display='grid';
+    renderStats();
+  }
+}
+
+function renderStats(){
+  const today=getToday();
+  document.getElementById('stat-earned').textContent=formatEuro(getEarnedInPeriod(statTab));
+  document.getElementById('stat-period').textContent=statTab==='week'?'diese Woche':'diesen Monat';
+  const streak=getStreak();
+  document.getElementById('stat-streak').textContent='🔥 '+(streak.main||0);
+  document.getElementById('stat-total').textContent=formatEuro(getTotalEarned());
+
+  const weekKey=getCurrentWeekKey(); const weekDates=getWeekDates(weekKey);
+  const passedDays=weekDates.filter(d=>d<=today);
+  const dailyTasks=getTasks().filter(t=>t.aktiv&&t.typ==='daily');
+  const log=getLog();
+  const possible=dailyTasks.length*passedDays.length;
+  const done=dailyTasks.reduce((s,t)=>s+passedDays.filter(d=>log.some(e=>e.taskId===t.id&&e.datum===d&&e.status==='done')).length,0);
+  document.getElementById('stat-rate').textContent=possible>0?Math.round((done/possible)*100)+'%':'—';
+
+  const wb=document.getElementById('week-bar');
+  wb.innerHTML='<div class="section-label" style="margin-bottom:8px">Diese Woche</div><div class="week-days">'+
+    weekDates.map(date=>{
+      const allDone=dailyTasks.length>0&&dailyTasks.every(t=>log.some(e=>e.taskId===t.id&&e.datum===date&&e.status==='done'));
+      const isToday=date===today; const future=date>today;
+      return `<div class="day-dot ${allDone?'done':''} ${isToday?'today':''}">
+        <div class="day-name">${getDayName(date)}</div>
+        <div class="day-check">${future?'':(allDone?'✓':(date<today?'·':''))}</div>
+      </div>`;
+    }).join('')+'</div>';
+
+  const mainDays=streak.main||0; const mainWeeks=Math.floor(mainDays/7);
+  const claimed=streak.milestonesClaimed||[];
+  const weeklyBonuses=getBonuses().filter(b=>b.typ==='weekly').length;
+
+  document.getElementById('milestones-list').innerHTML=MILESTONES.map(m=>{
+    const achieved=claimed.includes(m.key);
+    const progress=Math.min(mainWeeks,m.weeks);
+    const info=achieved?'Erhalten! ✓':`${progress} / ${m.weeks} Wochen`;
+    const pct=Math.min(100,Math.floor((mainWeeks/m.weeks)*100));
+    return `<div class="milestone-row ${achieved?'achieved':''}">
+      <div class="milestone-icon">${m.weeks===5?'🏅':m.weeks===10?'🏆':'💎'}</div>
+      <div class="milestone-info">
+        <div class="milestone-name">${m.label}</div>
+        <div class="milestone-sub">${info}</div>
+        ${!achieved?`<div class="progress-bar-wrap"><div class="progress-bar" style="width:${pct}%"></div></div>`:''}
+      </div>
+      <div class="milestone-val">+${fmtNum(m.betrag)} €</div>
+    </div>`;
+  }).join('')+`<div class="milestone-row ${weeklyBonuses>0?'achieved':''}">
+    <div class="milestone-icon">⭐</div>
+    <div class="milestone-info">
+      <div class="milestone-name">Wochen-Bonus</div>
+      <div class="milestone-sub">${weeklyBonuses>0?weeklyBonuses+'× erhalten · je 15,00 €':'Alle Daily-Tasks eine ganze Woche halten'}</div>
+    </div>
+    <div class="milestone-val">+15,00 €</div>
+  </div>`;
+
+  const tasks=getTasks().filter(t=>t.aktiv);
+  const tsl=document.getElementById('task-stats-list');
+  if(!tasks.length){tsl.innerHTML=`<div class="empty-state"><div class="empty-icon">📊</div>Noch keine Daten.</div>`;return;}
+  tsl.innerHTML=tasks.map(task=>{
+    const taskLog=log.filter(e=>e.taskId===task.id&&e.status==='done');
+    let streakInfo='';
+    if(task.typ==='xweek'){
+      const prog=getXWeekProgressThisWeek(task.id);
+      const ws=(streak.taskStreaks||{})[task.id]||0;
+      streakInfo=`<div class="task-stat-streak">🎯 ${ws} Wochen · ${prog}/${task.frequenz}× diese Woche</div>`;
+    } else if(task.typ==='daily'){
+      const weekDone=passedDays.filter(d=>log.some(e=>e.taskId===task.id&&e.datum===d&&e.status==='done')).length;
+      streakInfo=`<div class="task-stat-streak">📅 ${weekDone}/${passedDays.length} Tage diese Woche</div>`;
+    }
+    const cat=getCats().find(c=>c.id===task.catId);
+    return `<div class="task-stat-row">
+      <div class="task-stat-name">${cat?cat.emoji+' ':''}${task.name}</div>
+      <div class="task-stat-right">
+        <div class="task-stat-count">${formatEuro(taskLog.reduce((s,e)=>s+(e.verdient||0),0))} gesamt</div>
+        ${streakInfo}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── SETTINGS ───────────────────────────────────────────
+function renderSettings(){
+  const cats=getCats(); const tasks=getTasks();
+  document.getElementById('budget-display').textContent=fmtNum(getBudgetLimit())+' €';
+  renderUrlaubSetting();
+  document.getElementById('cat-list').innerHTML=cats.map(cat=>`
+    <div class="settings-item" onclick="openCatModal('${cat.id}')">
+      <div class="settings-item-left">
+        <div class="settings-item-name">${cat.emoji} ${cat.name}</div>
+        <div class="settings-item-sub">${tasks.filter(t=>t.catId===cat.id).length} Aufgaben</div>
+      </div>
+      <div class="settings-item-right">›</div>
+    </div>`).join('');
+
+  document.getElementById('task-list-settings').innerHTML=tasks.map(task=>{
+    const cat=cats.find(c=>c.id===task.catId);
+    const typeLabel={daily:'🟣 Daily',xweek:`🟢 ${task.frequenz}×/Woche`,optional:'🟡 Optional'}[task.typ];
+    return `<div class="settings-item" onclick="openTaskModal('${task.id}')">
+      <div class="settings-item-left">
+        <div class="settings-item-name">${cat?cat.emoji+' ':''}${task.name}</div>
+        <div class="settings-item-sub">${typeLabel} · ${fmtNum(task.wert)} €</div>
+      </div>
+      <div class="settings-item-right">›</div>
+    </div>`;
+  }).join('');
+}
+
+// ── EXPORT / IMPORT ────────────────────────────────────
+function exportData(){
+  const data={
+    version:2, exportedAt:new Date().toISOString(),
+    cats:load(SK.cats,[]), tasks:load(SK.tasks,[]), log:load(SK.log,[]),
+    wakeup:load(SK.wakeup,{}), streak:load(SK.streak,{}), bonuses:load(SK.bonuses,[]),
+    todos:load(SK.todos,[]), ausgaben:load(SK.ausgaben,[]), budget:load(SK.budget,{}),
+  };
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=`dailyearn-v2-backup-${getToday()}.json`;
+  a.click(); URL.revokeObjectURL(url);
+  showToast('✅ Export gespeichert');
+}
+
+function importData(event){
+  const file=event.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const data=JSON.parse(e.target.result);
+      if(!data.tasks){alert('Ungültige Datei.');return;}
+      if(!confirm(`Backup vom ${data.exportedAt?.slice(0,10)||'?'} importieren?\nAlle aktuellen Daten werden überschrieben.`)) return;
+      if(data.cats) save(SK.cats,data.cats);
+      if(data.tasks) save(SK.tasks,data.tasks);
+      if(data.log) save(SK.log,data.log);
+      if(data.wakeup) save(SK.wakeup,data.wakeup);
+      if(data.streak) save(SK.streak,data.streak);
+      if(data.bonuses) save(SK.bonuses,data.bonuses);
+      if(data.todos) save(SK.todos,data.todos);
+      if(data.ausgaben) save(SK.ausgaben,data.ausgaben);
+      if(data.budget) save(SK.budget,data.budget);
+      if(data.urlaub) save(SK.urlaub,data.urlaub);
+      migrateData();
+      showToast('✅ Import erfolgreich');
+      renderToday(); renderSettings(); renderTodos(); renderWallet();
+    }catch{alert('Datei konnte nicht gelesen werden.');}
+  };
+  reader.readAsText(file);
+  event.target.value='';
+}
+
+function confirmReset(){
+  if(!confirm('Wirklich ALLE Daten löschen? Das kann nicht rückgängig gemacht werden.')) return;
+  if(!confirm('Bist du sicher? Alle Tasks, Logs, Todos und Streaks werden gelöscht.')) return;
+  Object.values(SK).forEach(k=>localStorage.removeItem(k));
+  initData(); renderToday(); renderSettings(); renderTodos(); renderWallet();
+  showToast('🗑️ Alle Daten gelöscht');
+}
+
+// ── TASK MODAL ─────────────────────────────────────────
+let editingTaskId=null, currentType='daily', currentFreq=3;
+
+function openTaskModal(taskId){
+  editingTaskId=taskId||null; currentType='daily'; currentFreq=3;
+  const cats=getCats();
+  document.getElementById('task-modal-title').textContent=taskId?'Aufgabe bearbeiten':'Neue Aufgabe';
+  document.getElementById('task-cat-select').innerHTML=cats.map(c=>`<option value="${c.id}">${c.emoji} ${c.name}</option>`).join('');
+  document.getElementById('task-delete-btn').style.display=taskId?'block':'none';
+  document.getElementById('freq-num').textContent=currentFreq;
+  if(taskId){
+    const task=getTasks().find(t=>t.id===taskId);
+    if(task){
+      document.getElementById('task-name-input').value=task.name;
+      document.getElementById('task-value-input').value=task.wert;
+      document.getElementById('task-cat-select').value=task.catId||'';
+      currentType=task.typ; currentFreq=task.frequenz||3;
+      document.getElementById('freq-num').textContent=currentFreq;
+      document.getElementById('task-urlaub-toggle').checked=task.pausierbarImUrlaub===true;
+      selectType(task.typ,null);
+    }
+  } else {
+    document.getElementById('task-name-input').value='';
+    document.getElementById('task-value-input').value='';
+    document.getElementById('task-urlaub-toggle').checked=false;
+    selectType('daily',null);
+  }
+  // Urlaub-Toggle: Optional-Tasks bekommen ihn nicht
+  updateUrlaubToggleVisibility();
+  document.getElementById('task-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('task-name-input').focus(),100);
+}
+function closeTaskModal(){document.getElementById('task-modal').classList.remove('open');}
+function selectType(type,btn){
+  currentType=type;
+  document.querySelectorAll('#task-modal .seg-btn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  else{const btns=document.querySelectorAll('#task-modal .seg-btn');const idx=['daily','xweek','optional'].indexOf(type);if(btns[idx])btns[idx].classList.add('active');}
+  document.getElementById('freq-group').style.display=type==='xweek'?'block':'none';
+  updateUrlaubToggleVisibility();
+}
+function updateUrlaubToggleVisibility(){
+  const grp=document.getElementById('urlaub-toggle-group');
+  if(!grp) return;
+  // Optional-Tasks haben keinen Streak → Toggle nicht relevant
+  grp.style.display=currentType==='optional'?'none':'block';
+}
+function changeFreq(delta){currentFreq=Math.max(1,Math.min(7,currentFreq+delta));document.getElementById('freq-num').textContent=currentFreq;}
+function saveTask(){
+  const name=document.getElementById('task-name-input').value.trim();
+  const val=parseFloat(document.getElementById('task-value-input').value)||0;
+  const catId=document.getElementById('task-cat-select').value;
+  if(!name){document.getElementById('task-name-input').focus();return;}
+  const tasks=getTasks();
+  const pausierbarImUrlaub=currentType==='optional'?false:document.getElementById('task-urlaub-toggle').checked;
+  if(editingTaskId){
+    const idx=tasks.findIndex(t=>t.id===editingTaskId);
+    if(idx>=0) tasks[idx]={...tasks[idx],name,wert:val,catId,typ:currentType,frequenz:currentFreq,pausierbarImUrlaub};
+  } else {
+    tasks.push({id:'t'+Date.now(),name,wert:val,catId,typ:currentType,frequenz:currentFreq,aktiv:true,pausierbarImUrlaub});
+  }
+  save(SK.tasks,tasks); closeTaskModal(); renderSettings(); renderToday();
+}
+function deleteTask(){
+  if(!editingTaskId||!confirm('Aufgabe wirklich löschen?')) return;
+  save(SK.tasks,getTasks().filter(t=>t.id!==editingTaskId));
+  closeTaskModal(); renderSettings(); renderToday();
+}
+
+// ── CAT MODAL ──────────────────────────────────────────
+let editingCatId=null;
+function openCatModal(catId){
+  editingCatId=catId||null;
+  document.getElementById('cat-modal-title').textContent=catId?'Kategorie bearbeiten':'Neue Kategorie';
+  document.getElementById('cat-delete-btn').style.display=catId?'block':'none';
+  if(catId){const cat=getCats().find(c=>c.id===catId);if(cat){document.getElementById('cat-name-input').value=cat.name;document.getElementById('cat-emoji-input').value=cat.emoji;}}
+  else{document.getElementById('cat-name-input').value='';document.getElementById('cat-emoji-input').value='';}
+  document.getElementById('cat-modal').classList.add('open');
+}
+function closeCatModal(){document.getElementById('cat-modal').classList.remove('open');}
+function saveCat(){
+  const name=document.getElementById('cat-name-input').value.trim();
+  const emoji=document.getElementById('cat-emoji-input').value.trim()||'📋';
+  if(!name){document.getElementById('cat-name-input').focus();return;}
+  const cats=getCats();
+  if(editingCatId){const idx=cats.findIndex(c=>c.id===editingCatId);if(idx>=0)cats[idx]={...cats[idx],name,emoji};}
+  else cats.push({id:'cat'+Date.now(),name,emoji});
+  save(SK.cats,cats); closeCatModal(); renderSettings(); renderToday();
+}
+function deleteCat(){
+  if(!editingCatId||!confirm('Kategorie löschen? Aufgaben bleiben erhalten.')) return;
+  save(SK.cats,getCats().filter(c=>c.id!==editingCatId));
+  closeCatModal(); renderSettings(); renderToday();
+}
+
+// ── NAVIGATION ──────────────────────────────────────────
+function showScreen(name,btn){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  btn.classList.add('active');
+  if(name==='stats') renderStats();
+  if(name==='settings') renderSettings();
+  if(name==='today') renderToday();
+  if(name==='todos') renderTodos();
+  if(name==='wallet') renderWallet();
+}
+
+// Close modals on backdrop click
+['task-modal','cat-modal','todo-modal','ausgabe-modal','budget-modal','urlaub-modal'].forEach(id=>{
+  document.getElementById(id).addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');});
+});
+document.getElementById('todo-detail-modal').addEventListener('click',function(e){if(e.target===this)closeTodoDetail();});
+
+initData();
+renderToday();
+</script>
+</body>
+</html>
