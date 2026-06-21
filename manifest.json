@@ -2,7 +2,7 @@
   "name": "DailyEarn",
   "short_name": "DailyEarn",
   "description": "Verdiene virtuelles Geld für erledigte Gewohnheiten und Aufgaben.",
-  "start_url": "./dailyearn_v3.html",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",

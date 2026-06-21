@@ -4,6 +4,7 @@
 
 const CACHE_NAME = 'dailyearn-v3-cache-1';
 const FILES_TO_CACHE = [
+  './index.html',
   './dailyearn_v3.html',
   './manifest.json',
   './icons/icon-192.png',
